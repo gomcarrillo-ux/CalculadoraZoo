@@ -3,30 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora Gauss-Jordan</title>
+    <title>Calculadora Gauss y Gauss-Jordan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .matriz-box { font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 5px; }
+        .matriz-box { font-family: monospace; background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .matriz-cell { display: inline-block; min-width: 65px; text-align: right; padding: 0 5px; }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <h2 class="mb-4">Resolución de Matrices (Gauss y Gauss-Jordan)</h2>
+<div class="container mt-5 mb-5">
+    <h2 class="mb-4">Resolución de Matrices en Fracciones (Gauss y Gauss-Jordan)</h2>
     
     <div class="card bg-light mb-4">
         <div class="card-body">
             <form action="" method="post">
+                <!-- Selector de Método -->
+                <div class="mb-3">
+                    <label for="metodo" class="form-label fw-bold">Selecciona el método de resolución:</label>
+                    <select name="metodo" id="metodo" class="form-select">
+                        <option value="gauss_jordan" {% if metodo == 'gauss_jordan' or not metodo %}selected{% endif %}>
+                            Método de Gauss-Jordan
+                        </option>
+                        <option value="gauss" {% if metodo == 'gauss' %}selected{% endif %}>
+                            Método de Gauss (con sustitución hacia atrás)
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Entrada de Matriz -->
                 <div class="mb-3">
                     <label for="txtMatrix" class="form-label fw-bold">Ingresa la matriz aumentada:</label>
                     <div class="form-text mb-2">
                         Separa los números con espacios y las filas con "Enter". <br>
-                        Ejemplo para un sistema 2x2:<br>
-                        2 1 5<br>
-                        1 -3 -1
+                        Puedes usar enteros (ej: <code>2</code>), decimales (ej: <code>2.5</code>) o fracciones (ej: <code>1/3</code>).
                     </div>
                     <textarea name="txtMatrix" id="txtMatrix" class="form-control" rows="5" required>{{ matriz_input }}</textarea>
                 </div>
+                
                 <button type="submit" class="btn btn-primary mt-2">Resolver Matriz</button>
             </form>
         </div>
@@ -37,7 +51,7 @@
     {% endif %}
 
     {% if pasos %}
-        <h3 class="mt-4 text-success">Resultados Finales (Comprobados)</h3>
+        <h3 class="mt-4 text-success">Resultados Finales</h3>
         <ul class="list-group mb-4">
             {% for res in resultados %}
                 <li class="list-group-item"><strong>Variable X{{ loop.index }}:</strong> {{ res }}</li>
@@ -45,17 +59,21 @@
         </ul>
 
         <h3 class="mt-4">Procedimiento Paso a Paso</h3>
-        {% for descripcion, matriz_paso in pasos %}
+        {% for descripcion, explicacion, matriz_paso in pasos %}
             <div class="card mb-3">
                 <div class="card-header bg-info text-white">
                     <strong>Paso {{ loop.index }}:</strong> {{ descripcion }}
                 </div>
                 <div class="card-body">
+                    <p class="text-muted mb-3">
+                        <strong>¿Por qué se realiza este paso?</strong><br>
+                        {{ explicacion }}
+                    </p>
                     <div class="matriz-box">
                         {% for fila in matriz_paso %}
                             <div>
                                 {% for val in fila %}
-                                    <span style="display:inline-block; width: 60px; text-align: right;">{{ "%.2f"|format(val) }}</span>
+                                    <span class="matriz-cell">{{ val }}</span>
                                 {% endfor %}
                             </div>
                         {% endfor %}
