@@ -182,4 +182,5 @@ def matrices():
                            cols=cols)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # host='0.0.0.0' le dice a Flask que acepte conexiones de cualquier dispositivo en tu red
+    app.run(host='0.0.0.0', port=5000, debug=True)
