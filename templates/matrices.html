@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Magia Algebraica 🎩🐰</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Librerías de KaTeX para matemáticas hermosas -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" 
+            onload="renderMathInElement(document.body, {delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ]});"></script>
+
+    <style>
+        body { background-color: #fce4ec; font-family: 'Segoe UI', sans-serif; }
+        .card-magia { background-color: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; margin-top: 20px; }
+        .btn-magia { background-color: #9c27b0; color: white; font-weight: bold; width: 100%; transition: 0.3s; border-radius: 10px; }
+        .btn-magia:hover { background-color: #7b1fa2; color: white; transform: scale(1.02); }
+        .grid-row { display: flex; justify-content: center; margin-bottom: 10px; }
+        .grid-row input { width: 75px; height: 50px; text-align: center; border: 2px solid #ce93d8; border-radius: 8px; margin: 0 4px; font-size: 1.1rem; }
+        .result-cell { background-color: #f3e5f5; font-weight: bold; border-color: #ba68c8 !important; }
+        
+        #pantalla-carga {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(253, 238, 244, 0.95); z-index: 9999;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        .paso-box { background-color: #fafafa; border-left: 5px solid #ab47bc; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .katex-display { margin: 15px 0; overflow-x: auto; overflow-y: hidden; } /* Para que las matrices grandes no rompan la pantalla */
+        
+        .img-conejo { transition: transform 0.3s ease; }
+        .img-conejo:hover { transform: scale(1.1) rotate(-5deg); }
+    </style>
+</head>
+<body>
+
+<div id="pantalla-carga">
+    <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="220" alt="Conejo saltando">
+    <h2 style="color: #9c27b0; font-weight: bold; margin-top: 20px;">¡Calculando Hechizo Mágico! ✨🎩</h2>
+</div>
+
+<div class="container mt-4 mb-5" style="max-width: 900px;">
+    <a href="/" class="btn btn-outline-secondary mb-3 fw-bold">⬅ Volver al Menú Arcade</a>
+    
+    <div class="text-center">
+        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
+            <img src="{{ url_for('static', filename='conejito1.png') }}" width="110" class="img-conejo" alt="Conejito Mago 1">
+            <div>
+                <h1 style="margin-bottom: 5px;">🎩 ✨ 🪄</h1>
+                <h1 style="color: #6a1b9a; font-weight: bold; margin: 0;">Calculadora de Magia</h1>
+            </div>
+            <img src="{{ url_for('static', filename='conejito2.png') }}" width="110" class="img-conejo" alt="Conejito Mago 2">
+        </div>
+        <p class="text-secondary fw-bold mt-2">Resuelve sistemas y vectores con álgebra pura</p>
+    </div>
+
+    <div class="card-magia">
+        <form method="POST" id="form-magia">
+            <div class="row g-3 mb-4">
+                <div class="col-md-12">
+                    <label class="fw-bold text-secondary">1. Elige el hechizo:</label>
+                    <select name="metodo" id="metodo" class="form-select border-secondary fw-bold" onchange="generarGrid()">
+                        <option value="gauss_jordan" {% if metodo == 'gauss_jordan' %}selected{% endif %}>Método de Gauss-Jordan</option>
+                        <option value="gauss" {% if metodo == 'gauss' %}selected{% endif %}>Eliminación Gaussiana (Gauss)</option>
+                        <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>Vectores: A(u + v)</option>
+                        <option value="vec_au_av" {% if metodo == 'vec_au_av' %}selected{% endif %}>Vectores: Au + Av</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="fw-bold text-secondary">2. Filas (Ecuaciones):</label>
+                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
+                </div>
+                <div class="col-md-6">
+                    <label class="fw-bold text-secondary">3. Columnas (Variables):</label>
+                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
+                </div>
+            </div>
+
+            <div class="text-center mb-3">
+                <small class="text-muted d-block">Acepta números (4), variables (w) y expresiones (5w1, 3x, 2a+1)</small>
+            </div>
+
+            <div id="grid-container" class="mb-4"></div>
+
+            <button type="submit" class="btn btn-magia fs-5 py-2">Lanzar Hechizo ✨🪄</button>
+        </form>
+    </div>
+
+    <!-- PASO A PASO CON MATRICES KATEX -->
+    {% if pasos %}
+        <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
+            <div class="d-flex align-items-center mb-3 gap-3">
+                <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="70" alt="Conejo trabajando">
+                <h3 style="color: #7b1fa2; font-weight: bold; margin: 0;">Paso a Paso del Proceso:</h3>
+            </div>
+            
+            {% for titulo, explicacion, matriz in pasos %}
+                <div class="paso-box">
+                    <h5 style="color: #8e24aa; font-weight: bold;">{{ titulo }}</h5>
+                    <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
+                    
+                    {% if matriz %}
+                        <div class="fs-4 text-center text-dark">
+                            <!-- Aquí convertimos la matriz de Python en sintaxis LaTeX -->
+                            $$ \begin{bmatrix}
+                            {% for fila in matriz %}
+                                {% for val in fila %} {{ val }} {% if not loop.last %} & {% endif %} {% endfor %}
+                                {% if not loop.last %} \\ {% endif %}
+                            {% endfor %}
+                            \end{bmatrix} $$
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- RESULTADO FINAL CON KATEX -->
+    {% if resultados %}
+        <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
+            <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="230" class="mx-auto d-block mb-3" alt="Conejo feliz">
+            <h2 style="color: #8e24aa; font-weight: bold;">¡El resultado final está listo!</h2>
+            
+            <div class="row mt-3 justify-content-center">
+                {% for i in range(resultados|length) %}
+                    <div class="col-auto mb-2">
+                        <div class="p-3 fs-3 rounded-3" style="background-color: #f3e5f5; border: 2px solid #ce93d8;">
+                            <!-- Variables y resultados en formato matemático inline -->
+                            $ {{ nombres_vars[i] }} = {{ resultados[i] }} $
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+    const numFilas = document.getElementById('filas');
+    const numCols = document.getElementById('cols');
+    const metodoSelect = document.getElementById('metodo');
+    const gridContainer = document.getElementById('grid-container');
+
+    function crearInput(nombre, claseExtra) {
+        const input = document.createElement('input');
+        input.type = 'text'; 
+        input.name = nombre;
+        input.className = claseExtra;
+        input.required = true;
+        input.value = "0";
+        return input;
+    }
+
+    function generarGrid() {
+        gridContainer.innerHTML = ""; 
+        const filas = parseInt(numFilas.value) || 2;
+        const cols = parseInt(numCols.value) || 2;
+        const metodo = metodoSelect.value;
+
+        if (metodo === 'gauss_jordan' || metodo === 'gauss') {
+            for (let i = 0; i < filas; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                for (let j = 0; j < cols; j++) { 
+                    rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'gauss-val')); 
+                }
+                const resInput = crearInput(`b_${i}`, 'gauss-val result-cell');
+                const separator = document.createElement('span');
+                separator.innerHTML = ' = ';
+                separator.className = 'fw-bold text-secondary mx-2 align-self-center fs-4';
+                rowDiv.appendChild(separator);
+                rowDiv.appendChild(resInput);
+                gridContainer.appendChild(rowDiv);
+            }
+        } else {
+            const flexContainer = document.createElement('div');
+            flexContainer.className = 'd-flex flex-wrap justify-content-center gap-4';
+
+            const divA = document.createElement('div');
+            divA.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Matriz A</h5>';
+            for (let i = 0; i < filas; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                for (let j = 0; j < cols; j++) { 
+                    rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'vec-A')); 
+                }
+                divA.appendChild(rowDiv);
+            }
+
+            const divU = document.createElement('div');
+            divU.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Vector u</h5>';
+            for (let i = 0; i < cols; i++) { 
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                rowDiv.appendChild(crearInput(`u_${i}`, 'vec-U'));
+                divU.appendChild(rowDiv);
+            }
+
+            const divV = document.createElement('div');
+            divV.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Vector v</h5>';
+            for (let i = 0; i < cols; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                rowDiv.appendChild(crearInput(`v_${i}`, 'vec-V'));
+                divV.appendChild(rowDiv);
+            }
+
+            flexContainer.appendChild(divA);
+            flexContainer.appendChild(divU);
+            flexContainer.appendChild(divV);
+            gridContainer.appendChild(flexContainer);
+        }
+    }
+
+    document.getElementById('form-magia').addEventListener('submit', function() {
+        document.getElementById('pantalla-carga').style.display = 'flex';
+    });
+
+    generarGrid();
+</script>
+</body>
+</html>
