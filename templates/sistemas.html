@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratorio de Ajolotes 🫧🦎</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Librerías de KaTeX para subíndices y estilo matemático -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" 
+            onload="renderMathInElement(document.body, {delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ]});"></script>
+
+    <style>
+        body { 
+            background: linear-gradient(135deg, #e0f7fa 0%, #fce4ec 100%); 
+            font-family: 'Segoe UI', sans-serif; 
+            min-height: 100vh;
+        }
+        .card-ajolote { 
+            background-color: rgba(255, 255, 255, 0.95); 
+            border-radius: 20px; 
+            box-shadow: 0 8px 25px rgba(0, 150, 136, 0.15); 
+            padding: 30px; 
+            margin-top: 20px;
+            border: 2px solid #b2ebf2;
+        }
+        .btn-ajolote { 
+            background-color: #00bcd4; 
+            color: white; 
+            font-weight: bold; 
+            width: 100%; 
+            transition: 0.3s; 
+            border-radius: 12px;
+            border: none;
+        }
+        .btn-ajolote:hover { 
+            background-color: #00838f; 
+            color: white; 
+            transform: translateY(-2px); 
+        }
+        .burbuja-card {
+            background-color: #e0f2f1;
+            border: 2px solid #80deea;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .paso-box-acuatico {
+            background-color: #f1f8e9;
+            border-left: 5px solid #26a69a;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .badge-regla {
+            background-color: #e0f7fa;
+            color: #00796b;
+            border: 1px solid #80deea;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .img-ajolote {
+            transition: transform 0.3s ease;
+        }
+        .img-ajolote:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-4 mb-5" style="max-width: 850px;">
+    <a href="/" class="btn btn-outline-info mb-3 fw-bold text-dark">⬅ Volver al Menú Arcade</a>
+    
+    <!-- ENCABEZADO -->
+    <div class="text-center">
+        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
+            <img src="{{ url_for('static', filename='ajo1.png') }}" width="100" class="img-ajolote" alt="Ajolote 1">
+            <h1 style="color: #00838f; font-weight: bold; margin: 0;">Conversor del Arrecife 🫧</h1>
+            <img src="{{ url_for('static', filename='ajo2.png') }}" width="100" class="img-ajolote" alt="Ajolote 2">
+        </div>
+        <p class="text-secondary">Convierte números entre bases numéricas con ayuda de tus ajolotes</p>
+    </div>
+
+    <div class="card-ajolote">
+        <form method="POST">
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <label class="fw-bold text-secondary">Escribe el valor a convertir:</label>
+                    <input type="text" name="numero" id="input-numero" class="form-control form-control-lg border-info" value="{{ numero }}" required>
+                    <div id="guia-base" class="badge-regla fw-bold"></div>
+                </div>
+                <div class="col-md-5">
+                    <label class="fw-bold text-secondary">Base de origen:</label>
+                    <select name="base" id="select-base" class="form-select form-select-lg border-info fw-bold" onchange="actualizarModoBase()">
+                        <option value="2" {% if base == 2 %}selected{% endif %}>Base 2 (Binario)</option>
+                        <option value="8" {% if base == 8 %}selected{% endif %}>Base 8 (Octal)</option>
+                        <option value="10" {% if base == 10 %}selected{% endif %}>Base 10 (Decimal)</option>
+                        <option value="16" {% if base == 16 %}selected{% endif %}>Base 16 (Hexadecimal)</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-ajolote fs-5 py-2 mt-4">Nadar en las Conversiones 🫧🏊‍♂️</button>
+        </form>
+    </div>
+
+    <!-- MENSAJE DE ERROR -->
+    {% if error %}
+        <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <!-- PASO A PASO CON AJOG1 -->
+    {% if pasos %}
+        <div class="card-ajolote mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <img src="{{ url_for('static', filename='ajog1.gif') }}" width="65" alt="Ajolote explicando pasos">
+                <h4 style="color: #00796b; font-weight: bold; margin: 0;">🫧 Paso a Paso del Arrecife:</h4>
+            </div>
+            {% for titulo, explicacion in pasos %}
+                <div class="paso-box-acuatico">
+                    <h5 style="color: #004d40; font-weight: bold;">{{ titulo }}</h5>
+                    <p class="mb-0 text-dark fs-5">{{ explicacion | safe }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- RESULTADOS CON AJOG2 Y KATEX -->
+    {% if resultados %}
+        <div class="card-ajolote mt-4 text-center">
+            <img src="{{ url_for('static', filename='ajog2.gif') }}" width="150" class="mx-auto d-block mb-2 img-ajolote" alt="Ajolote celebrando resultados">
+            <h3 style="color: #00838f; font-weight: bold;" class="mb-4">🎉 ¡Burbujas Convertidas!</h3>
+            <div class="row g-3">
+                {% for sistema, valor in resultados.items() %}
+                    <div class="col-md-6">
+                        <div class="burbuja-card">
+                            <span class="text-secondary fw-bold text-uppercase d-block mb-1">{{ sistema }}</span>
+                            <span class="fs-3 fw-bold" style="color: #00695c;">
+                                <!-- Lógica de Jinja2 para asignar el subíndice de la base dinámicamente -->
+                                {% if sistema == 'Binario' %}
+                                    $ {{ valor }}_2 $
+                                {% elif sistema == 'Octal' %}
+                                    $ {{ valor }}_8 $
+                                {% elif sistema == 'Decimal' %}
+                                    $ {{ valor }}_{10} $
+                                {% elif sistema == 'Hexadecimal' %}
+                                    $ \mathrm{ {{ valor }} }_{16} $
+                                {% else %}
+                                    $ {{ valor }} $
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function actualizarModoBase() {
+        const base = document.getElementById('select-base').value;
+        const input = document.getElementById('input-numero');
+        const guia = document.getElementById('guia-base');
+        
+        if (base === '2') {
+            input.placeholder = 'Ej: 10101';
+            guia.innerHTML = '📌 Permite únicamente: <b>0 y 1</b>';
+        } else if (base === '8') {
+            input.placeholder = 'Ej: 754';
+            guia.innerHTML = '📌 Permite números del: <b>0 al 7</b>';
+        } else if (base === '10') {
+            input.placeholder = 'Ej: 429';
+            guia.innerHTML = '📌 Permite números del: <b>0 al 9</b>';
+        } else if (base === '16') {
+            input.placeholder = 'Ej: FF o 1A3';
+            guia.innerHTML = '📌 Permite: <b>0-9 y letras A-F</b>';
+        }
+    }
+
+    actualizarModoBase();
+</script>
+</body>
+</html>
