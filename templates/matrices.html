@@ -5,7 +5,6 @@
     <title>Magia Algebraica 🎩🐰</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Librerías de KaTeX para matemáticas hermosas -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" 
@@ -13,6 +12,9 @@
 
     <style>
         body { background-color: #fce4ec; font-family: 'Segoe UI', sans-serif; }
+        .banner-fia { background-color: #ffffff; padding: 10px 0; border-bottom: 1px solid #f8bbd0; text-align: center; }
+        .banner-fia img { max-height: 50px; width: auto; }
+        
         .card-magia { background-color: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; margin-top: 20px; }
         .btn-magia { background-color: #9c27b0; color: white; font-weight: bold; width: 100%; transition: 0.3s; border-radius: 10px; }
         .btn-magia:hover { background-color: #7b1fa2; color: white; transform: scale(1.02); }
@@ -27,7 +29,7 @@
         }
 
         .paso-box { background-color: #fafafa; border-left: 5px solid #ab47bc; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .katex-display { margin: 15px 0; overflow-x: auto; overflow-y: hidden; } /* Para que las matrices grandes no rompan la pantalla */
+        .katex-display { margin: 15px 0; overflow-x: auto; overflow-y: hidden; }
         
         .img-conejo { transition: transform 0.3s ease; }
         .img-conejo:hover { transform: scale(1.1) rotate(-5deg); }
@@ -35,13 +37,18 @@
 </head>
 <body>
 
+<!-- BANNER SUPERIOR GENERAL -->
+<div class="banner-fia shadow-sm">
+    <img src="{{ url_for('static', filename='fia.png') }}" alt="Facultad de Ingeniería y Arquitectura" class="img-fluid">
+</div>
+
 <div id="pantalla-carga">
     <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="220" alt="Conejo saltando">
     <h2 style="color: #9c27b0; font-weight: bold; margin-top: 20px;">¡Calculando Hechizo Mágico! ✨🎩</h2>
 </div>
 
 <div class="container mt-4 mb-5" style="max-width: 900px;">
-    <a href="/" class="btn btn-outline-secondary mb-3 fw-bold">⬅ Volver al Menú Arcade</a>
+    <a href="/" class="btn btn-outline-secondary mb-3 fw-bold">⬅ Volver al Menú Principal</a>
     
     <div class="text-center">
         <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
@@ -87,7 +94,6 @@
         </form>
     </div>
 
-    <!-- PASO A PASO CON MATRICES KATEX -->
     {% if pasos %}
         <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
             <div class="d-flex align-items-center mb-3 gap-3">
@@ -102,7 +108,6 @@
                     
                     {% if matriz %}
                         <div class="fs-4 text-center text-dark">
-                            <!-- Aquí convertimos la matriz de Python en sintaxis LaTeX -->
                             $$ \begin{bmatrix}
                             {% for fila in matriz %}
                                 {% for val in fila %} {{ val }} {% if not loop.last %} & {% endif %} {% endfor %}
@@ -116,7 +121,6 @@
         </div>
     {% endif %}
 
-    <!-- RESULTADO FINAL CON KATEX -->
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
             <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="230" class="mx-auto d-block mb-3" alt="Conejo feliz">
@@ -126,7 +130,6 @@
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
                         <div class="p-3 fs-3 rounded-3" style="background-color: #f3e5f5; border: 2px solid #ce93d8;">
-                            <!-- Variables y resultados en formato matemático inline -->
                             $ {{ nombres_vars[i] }} = {{ resultados[i] }} $
                         </div>
                     </div>
