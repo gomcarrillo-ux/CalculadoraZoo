@@ -68,24 +68,20 @@
                 <div class="col-md-12">
                     <label class="fw-bold text-secondary">1. Elige el hechizo:</label>
                     <select name="metodo" id="metodo" class="form-select border-secondary fw-bold" onchange="generarGrid()">
-                        <option value="gauss_jordan" {% if metodo == 'gauss_jordan' %}selected{% endif %}>Método de Gauss-Jordan</option>
-                        <option value="gauss" {% if metodo == 'gauss' %}selected{% endif %}>Eliminación Gaussiana (Gauss)</option>
+                        <option value="gauss_jordan" {% if metodo == 'gauss_jordan' %}selected{% endif %}>Eliminación Gauss-Jordan (Ax = b)</option>
+                        <option value="comb_lineal" {% if metodo == 'comb_lineal' %}selected{% endif %}>Combinación Lineal de Vectores (v en R^n)</option>
                         <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>Vectores: A(u + v)</option>
                         <option value="vec_au_av" {% if metodo == 'vec_au_av' %}selected{% endif %}>Vectores: Au + Av</option>
                     </select>
                 </div>
                 <div class="col-md-6">
-                    <label class="fw-bold text-secondary">2. Filas (Ecuaciones):</label>
+                    <label class="fw-bold text-secondary">2. Filas (Dimensión n / Ecuaciones):</label>
                     <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
                 </div>
                 <div class="col-md-6">
-                    <label class="fw-bold text-secondary">3. Columnas (Variables):</label>
+                    <label class="fw-bold text-secondary">3. Columnas (Número de Vectores / Variables):</label>
                     <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
                 </div>
-            </div>
-
-            <div class="text-center mb-3">
-                <small class="text-muted d-block">Acepta números (4), variables (w) y expresiones (5w1, 3x, 2a+1)</small>
             </div>
 
             <div id="grid-container" class="mb-4"></div>
@@ -162,7 +158,7 @@
         const cols = parseInt(numCols.value) || 2;
         const metodo = metodoSelect.value;
 
-        if (metodo === 'gauss_jordan' || metodo === 'gauss') {
+        if (metodo === 'gauss_jordan') {
             for (let i = 0; i < filas; i++) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'grid-row';
@@ -177,6 +173,27 @@
                 rowDiv.appendChild(resInput);
                 gridContainer.appendChild(rowDiv);
             }
+        } else if (metodo === 'comb_lineal') {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'text-center';
+            wrapper.innerHTML = '<h5 class="text-secondary mb-3 fw-bold">Ingrese los vectores v_1..v_k y el vector b:</h5>';
+            
+            for (let i = 0; i < filas; i++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'grid-row';
+                for (let j = 0; j < cols; j++) { 
+                    rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'vec-val')); 
+                }
+                const separator = document.createElement('span');
+                separator.innerHTML = ' | ';
+                separator.className = 'fw-bold text-danger mx-2 align-self-center fs-4';
+                rowDiv.appendChild(separator);
+                
+                const bInput = crearInput(`b_${i}`, 'vec-val result-cell');
+                rowDiv.appendChild(bInput);
+                wrapper.appendChild(rowDiv);
+            }
+            gridContainer.appendChild(wrapper);
         } else {
             const flexContainer = document.createElement('div');
             flexContainer.className = 'd-flex flex-wrap justify-content-center gap-4';

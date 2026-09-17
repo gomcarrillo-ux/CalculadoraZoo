@@ -15,9 +15,12 @@
         .arcade-container { background-color: #16213e; border-radius: 15px; padding: 30px; margin-top: 25px; border: 2px solid #0f3460; }
         .title-arcade { font-family: 'Courier New', monospace; font-size: 2rem; color: #f39c12; text-shadow: 0 0 10px #e67e22; font-weight: bold; }
         
-        .grid-select { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; max-width: 800px; margin: 25px auto 0 auto; }
-        .char-card { background-color: #0f3460; border: 3px solid #1f4068; border-radius: 12px; padding: 20px; text-decoration: none; color: white; transition: all 0.3s ease; text-align: center; }
-        .char-card:hover { transform: translateY(-5px); border-color: #e94560; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); color: white; }
+        .grid-select { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; max-width: 850px; margin: 25px auto 0 auto; }
+        .char-card { background-color: #0f3460; border: 3px solid #1f4068; border-radius: 12px; padding: 20px; text-decoration: none; color: white; transition: all 0.3s ease; text-align: center; position: relative; }
+        .char-card:hover:not(.locked) { transform: translateY(-5px); border-color: #e94560; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); color: white; }
+        
+        .char-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #444; }
+        .badge-locked { position: absolute; top: 10px; right: 10px; background-color: #e74c3c; color: white; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; }
         .emoji-big { font-size: 3.5rem; margin-bottom: 10px; }
     </style>
 </head>
@@ -30,12 +33,17 @@
 
     <div class="container my-4" style="max-width: 850px;">
         
-        <!-- ENCABEZADO INSTITUCIONAL -->
+        <!-- ENCABEZADO INSTITUTIONAL Y PORTADA -->
         <div class="info-card text-center">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Universidad Americana" class="logo-uam d-block mx-auto">
             <h3 style="color: #005a9c; font-weight: bold;" class="mb-1">Universidad Americana</h3>
-            <h5 class="text-secondary fw-bold mb-3">Facultad de Ingeniería y Arquitectura</h5>
+            <h5 class="text-secondary fw-bold mb-2">Facultad de Ingeniería y Arquitectura</h5>
             
+            <div class="py-2 my-2 rounded-3" style="background-color: #e3f2fd; border: 1px solid #90caf9;">
+                <h4 style="color: #0d47a1; font-weight: bold;" class="mb-0">Asignatura: Álgebra Lineal (MTM0120)</h4>
+                <h5 style="color: #1565c0; font-weight: bold;" class="mt-1 mb-0">Grupo 2</h5>
+            </div>
+
             <hr class="my-3">
 
             <div class="row text-start justify-content-center">
@@ -50,21 +58,41 @@
             </div>
         </div>
 
-        <!-- SECCIÓN DE SELECCIÓN DE MUNDOS -->
+        <!-- SECCIÓN DE SELECCIÓN DE MUNDOS DE VIDEOJUEGO -->
         <div class="arcade-container text-center">
-            <h2 class="title-arcade">¡SELECCIONA TU MUNDO!</h2>
+            <h2 class="title-arcade">🎮 ¡SELECCIONA TU MUNDO! 🎮</h2>
             <div class="grid-select">
+                
+                <!-- MUNDO 1 (ACTIVO) -->
                 <a href="/matrices" class="char-card" style="border-color: #ce93d8;">
                     <div class="emoji-big">🎩🐰</div>
                     <h4 style="color: #ce93d8;">Mundo 1</h4>
                     <p class="mb-0 text-white-50">Matrices y Vectores</p>
                 </a>
 
+                <!-- MUNDO 2 (ACTIVO) -->
                 <a href="/sistemas" class="char-card" style="border-color: #4dd0e1;">
                     <div class="emoji-big">🫧🦎</div>
                     <h4 style="color: #4dd0e1;">Mundo 2</h4>
                     <p class="mb-0 text-white-50">Sistemas Numéricos</p>
                 </a>
+
+                <!-- MUNDO 3 (BLOQUEADO) -->
+                <div class="char-card locked">
+                    <span class="badge-locked">🔒 PRÓXIMAMENTE</span>
+                    <div class="emoji-big">📐⚡</div>
+                    <h4 class="text-secondary">Mundo 3</h4>
+                    <p class="mb-0 text-white-50">Transformaciones Lineales</p>
+                </div>
+
+                <!-- MUNDO 4 (BLOQUEADO) -->
+                <div class="char-card locked">
+                    <span class="badge-locked">🔒 PRÓXIMAMENTE</span>
+                    <div class="emoji-big">🌌🌀</div>
+                    <h4 class="text-secondary">Mundo 4</h4>
+                    <p class="mb-0 text-white-50">Espacios Vectoriales</p>
+                </div>
+
             </div>
         </div>
 
