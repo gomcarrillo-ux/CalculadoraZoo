@@ -10,9 +10,7 @@ from flask import Blueprint, render_template, request
 bp_matrices = Blueprint('matrices', __name__)
 
 
-# ==============================================================================
 # 1. MOTOR ALGEBRAICO SIMBÓLICO
-# ==============================================================================
 
 class AlgebraicExpression:
     def __init__(self, terms=None):
@@ -152,9 +150,7 @@ class AlgebraicExpression:
         return self.to_latex()
 
 
-# ==============================================================================
 # 2. UTILIDADES
-# ==============================================================================
 
 def parse_expression(value_str):
     return AlgebraicExpression.parse(value_str)
@@ -188,9 +184,7 @@ def extract_coefficient_and_variable(value_str):
     return sign + value_str, ""
 
 
-# ==============================================================================
 # 3. GAUSS-JORDAN CON PASO A PASO DETALLADO
-# ==============================================================================
 
 def _matrix_copy(matrix):
     return [row[:] for row in matrix]
@@ -345,9 +339,7 @@ def gauss_jordan_with_steps(augmented, num_vars):
     return steps, 'infinite', solution, pivot_cols, free_cols
 
 
-# ==============================================================================
 # 4. OPERACIONES MATRICIALES (reutilizadas por vectores.py)
-# ==============================================================================
 
 def multiply_matrices(matrix_a, matrix_b):
     rows_a, cols_a = len(matrix_a), len(matrix_a[0])
@@ -390,9 +382,7 @@ def rref(matrix_input):
     return A
 
 
-# ==============================================================================
 # 5. RUTA /matrices  (SOLO Gauss-Jordan)
-# ==============================================================================
 
 @bp_matrices.route('/matrices', methods=['GET', 'POST'])
 def matrices():

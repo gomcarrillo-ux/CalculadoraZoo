@@ -14,9 +14,7 @@ from matrices import (
 bp_vectores = Blueprint('vectores', __name__)
 
 
-# ==============================================================================
 # 1. LÓGICA VECTORIAL
-# ==============================================================================
 
 def add_or_subtract_vectors(u, v, operation='add'):
     """Suma o resta dos vectores componente a componente."""
@@ -106,9 +104,7 @@ def check_linear_independence(vectors):
     return False, reduced, (solution, free_cols)
 
 
-# ==============================================================================
 # 2. RUTA /vectores
-# ==============================================================================
 
 @bp_vectores.route('/vectores', methods=['GET', 'POST'])
 def vectores():
@@ -122,9 +118,7 @@ def vectores():
     conclusion = None
 
     try:
-        # ------------------------------------------------------------------
         # COMBINACIÓN LINEAL
-        # ------------------------------------------------------------------
         if metodo == 'comb_lineal':
             vectors = [
                 [parse_expression(request.form.get(f'v_{i}_{j}', '0')) for i in range(num_rows)]
@@ -178,9 +172,7 @@ def vectores():
                 ))
                 conclusion = "no_combinacion"
 
-        # ------------------------------------------------------------------
         # INDEPENDENCIA LINEAL
-        # ------------------------------------------------------------------
         elif metodo == 'independencia':
             vectors = [
                 [parse_expression(request.form.get(f'v_{i}_{j}', '0')) for i in range(num_rows)]
@@ -223,9 +215,7 @@ def vectores():
                     resultados.append("1")
                 conclusion = "dependiente"
 
-        # ------------------------------------------------------------------
         # LINEALIDAD: A(u+v) y Au + Av
-        # ------------------------------------------------------------------
         elif metodo in ['vec_auv', 'vec_au_av']:
             matrix_a = [
                 [parse_expression(request.form.get(f'a_{i}_{j}', '0')) for j in range(num_cols)]

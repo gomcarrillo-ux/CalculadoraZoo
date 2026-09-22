@@ -5,9 +5,8 @@ from flask import Blueprint, render_template, request
 bp_sistemas = Blueprint('sistemas', __name__)
 
 
-# ==============================================================================
+
 # LÓGICA DE CONVERSIÓN
-# ==============================================================================
 
 def convert_decimal_to_base(decimal_value, target_base):
     """Convierte un decimal a la base destino. Devuelve (resultado, pasos_html)."""
@@ -52,9 +51,7 @@ def convert_base_to_decimal(number_str, source_base):
     return accumulated, step_text
 
 
-# ==============================================================================
 # RUTA
-# ==============================================================================
 
 @bp_sistemas.route('/sistemas', methods=['GET', 'POST'])
 def sistemas():
