@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Álgebra Lineal - Módulo de Sistemas Numéricos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+            onload="renderMathInElement(document.body, {delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ]});"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f7fa 0%, #fce4ec 100%);
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+        .banner-fia { background-color: #ffffff; padding: 10px 0; border-bottom: 1px solid #b2ebf2; text-align: center; }
+        .banner-fia img { max-height: 50px; width: auto; }
+
+        .card-module {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0, 150, 136, 0.15);
+            padding: 30px;
+            margin-top: 20px;
+            border: 2px solid #b2ebf2;
+        }
+        .btn-module {
+            background-color: #00bcd4;
+            color: white;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.3s;
+            border-radius: 12px;
+            border: none;
+        }
+        .btn-module:hover {
+            background-color: #00838f;
+            color: white;
+            transform: translateY(-2px);
+        }
+        .resultado-card {
+            background-color: #e0f2f1;
+            border: 2px solid #80deea;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+        .paso-box {
+            background-color: #f1f8e9;
+            border-left: 5px solid #26a69a;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .badge-regla {
+            background-color: #e0f7fa;
+            color: #00796b;
+            border: 1px solid #80deea;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        .img-decorativa { transition: transform 0.3s ease; }
+        .img-decorativa:hover { transform: scale(1.1) rotate(5deg); }
+    </style>
+</head>
+<body>
+
+<!-- BANNER SUPERIOR GENERAL -->
+<div class="banner-fia shadow-sm">
+    <img src="{{ url_for('static', filename='fia.png') }}" alt="Facultad de Ingeniería y Arquitectura" class="img-fluid">
+</div>
+
+<div class="container mt-4 mb-5" style="max-width: 850px;">
+    <a href="/" class="btn btn-outline-info mb-3 fw-bold text-dark">Volver al Menú Principal</a>
+
+    <div class="text-center">
+        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
+            <img src="{{ url_for('static', filename='ajo1.png') }}" width="100" class="img-decorativa" alt="Ilustración 1">
+            <h1 style="color: #00838f; font-weight: bold; margin: 0;">Módulo de Sistemas Numéricos</h1>
+            <img src="{{ url_for('static', filename='ajo2.png') }}" width="100" class="img-decorativa" alt="Ilustración 2">
+        </div>
+        <p class="text-secondary">Conversión entre bases numéricas: binario, octal, decimal y hexadecimal</p>
+    </div>
+
+    <div class="card-module">
+        <form method="POST">
+            <div class="row g-3">
+                <div class="col-md-7">
+                    <label class="fw-bold text-secondary">Valor a convertir:</label>
+                    <input type="text" name="numero" id="input-numero" class="form-control form-control-lg border-info" value="{{ numero }}" required>
+                    <div id="guia-base" class="badge-regla fw-bold"></div>
+                </div>
+                <div class="col-md-5">
+                    <label class="fw-bold text-secondary">Base de origen:</label>
+                    <select name="base" id="select-base" class="form-select form-select-lg border-info fw-bold" onchange="actualizarModoBase()">
+                        <option value="2" {% if base == 2 %}selected{% endif %}>Base 2 (Binario)</option>
+                        <option value="8" {% if base == 8 %}selected{% endif %}>Base 8 (Octal)</option>
+                        <option value="10" {% if base == 10 %}selected{% endif %}>Base 10 (Decimal)</option>
+                        <option value="16" {% if base == 16 %}selected{% endif %}>Base 16 (Hexadecimal)</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-module fs-5 py-2 mt-4">Convertir</button>
+        </form>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if pasos %}
+        <div class="card-module mt-4">
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <img src="{{ url_for('static', filename='ajog1.gif') }}" width="65" alt="Procesando">
+                <h4 style="color: #00796b; font-weight: bold; margin: 0;">Procedimiento paso a paso</h4>
+            </div>
+            {% for titulo, explicacion in pasos %}
+                <div class="paso-box">
+                    <h5 style="color: #004d40; font-weight: bold;">{{ titulo }}</h5>
+                    <div class="mb-0 text-dark fs-5">{{ explicacion | safe }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if resultados %}
+        <div class="card-module mt-4 text-center">
+            <img src="{{ url_for('static', filename='ajog2.gif') }}" width="150" class="mx-auto d-block mb-2 img-decorativa" alt="Resultado">
+            <h3 style="color: #00838f; font-weight: bold;" class="mb-4">Resultado final</h3>
+            <div class="row g-3">
+                {% for sistema, valor in resultados.items() %}
+                    <div class="col-md-6">
+                        <div class="resultado-card">
+                            <span class="text-secondary fw-bold text-uppercase d-block mb-1">{{ sistema }}</span>
+                            <span class="fs-3 fw-bold" style="color: #00695c;">
+                                {% if sistema == 'Binario' %}
+                                    $ {{ valor }}_2 $
+                                {% elif sistema == 'Octal' %}
+                                    $ {{ valor }}_8 $
+                                {% elif sistema == 'Decimal' %}
+                                    $ {{ valor }}_{10} $
+                                {% elif sistema == 'Hexadecimal' %}
+                                    $ \mathrm{ {{ valor }} }_{16} $
+                                {% else %}
+                                    $ {{ valor }} $
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function actualizarModoBase() {
+        const base = document.getElementById('select-base').value;
+        const input = document.getElementById('input-numero');
+        const guia = document.getElementById('guia-base');
+
+        if (base === '2') {
+            input.placeholder = 'Ej: 10101';
+            guia.innerHTML = 'Permite únicamente: <b>0 y 1</b>';
+        } else if (base === '8') {
+            input.placeholder = 'Ej: 754';
+            guia.innerHTML = 'Permite números del: <b>0 al 7</b>';
+        } else if (base === '10') {
+            input.placeholder = 'Ej: 429';
+            guia.innerHTML = 'Permite números del: <b>0 al 9</b>';
+        } else if (base === '16') {
+            input.placeholder = 'Ej: FF o 1A3';
+            guia.innerHTML = 'Permite: <b>0-9 y letras A-F</b>';
+        }
+    }
+
+    actualizarModoBase();
+</script>
+</body>
+</html>
