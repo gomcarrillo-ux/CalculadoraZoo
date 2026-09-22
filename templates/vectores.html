@@ -30,7 +30,7 @@
 </div>
 
 <div id="pantalla-carga">
-    <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="220" alt="Procesando">
+    <img src="{{ url_for('static', filename='capiw.gif') }}" width="220" alt="Procesando">
     <h2 style="color: #f57c00; font-weight: bold; margin-top: 20px;">Procesando operaciones vectoriales...</h2>
 </div>
 
@@ -39,12 +39,12 @@
 
     <div class="text-center">
         <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
-            <img src="{{ url_for('static', filename='conejito1.png') }}" width="100" alt="Ilustración 1">
+            <img src="{{ url_for('static', filename='capii.png') }}" width="100" alt="Ilustración 1">
             <div>
-                <h1 style="margin-bottom: 5px;">➡️ 🧭 📐</h1>
+                <h1 style="margin-bottom: 5px;">🌴 📐 🦦</h1>
                 <h1 style="color: #e65100; font-weight: bold; margin: 0;">Módulo de Vectores</h1>
             </div>
-            <img src="{{ url_for('static', filename='conejito2.png') }}" width="100" alt="Ilustración 2">
+            <img src="{{ url_for('static', filename='capid.png') }}" width="100" alt="Ilustración 2">
         </div>
         <p class="text-secondary fw-bold mt-2">Combinación lineal, independencia lineal y propiedades de linealidad</p>
     </div>
@@ -78,7 +78,7 @@
     {% if pasos %}
         <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
             <div class="d-flex align-items-center mb-3 gap-3">
-                <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="65" alt="Procesando">
+                <img src="{{ url_for('static', filename='capiw.gif') }}" width="65" alt="Procesando">
                 <h3 style="color: #e65100; font-weight: bold; margin: 0;">Procedimiento paso a paso</h3>
             </div>
             {% for titulo, explicacion, matriz in pasos %}
@@ -118,7 +118,7 @@
 
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ffcc80; border-radius: 15px; background-color: white;">
-            <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
+            <img src="{{ url_for('static', filename='capi.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
             <h2 style="color: #e65100; font-weight: bold;">Resultado</h2>
             <div class="row mt-3 justify-content-center">
                 {% for i in range(resultados|length) %}
