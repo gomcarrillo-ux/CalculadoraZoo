@@ -10,12 +10,10 @@ from vectores import bp_vectores
 
 def create_app():
     app = Flask(__name__)
-
     app.register_blueprint(bp_menu)
     app.register_blueprint(bp_sistemas)
     app.register_blueprint(bp_matrices)
     app.register_blueprint(bp_vectores)
-
     return app
 
 

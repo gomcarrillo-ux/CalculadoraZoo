@@ -1,8 +1,6 @@
 # matrices.py
-"""Módulo de operaciones matriciales y sistemas lineales.
-
-Incluye el motor algebraico simbólico (AlgebraicExpression) y las utilidades
-de parseo/formato que otros módulos (vectores) reutilizan.
+"""Módulo de resolución de sistemas lineales por Gauss-Jordan.
+Incluye el motor algebraico simbólico compartido con el módulo de vectores.
 """
 import re
 from fractions import Fraction
@@ -17,61 +15,41 @@ bp_matrices = Blueprint('matrices', __name__)
 # ==============================================================================
 
 class AlgebraicExpression:
-    """Representa expresiones algebraicas como {variable: Fraction}."""
-
     def __init__(self, terms=None):
         self.terms = {}
         if terms:
-            for key, value in terms.items():
-                value_fraction = Fraction(value)
-                if value_fraction != 0:
-                    self.terms[key] = value_fraction
+            for k, v in terms.items():
+                fv = Fraction(v)
+                if fv != 0:
+                    self.terms[k] = fv
 
     @classmethod
     def parse(cls, value_str):
         value_str = str(value_str).strip().replace(" ", "")
         if not value_str or value_str == "0":
             return cls()
-
         value_str = value_str.replace("-", "+-")
         parts = [p for p in value_str.split("+") if p]
-
-        result_terms = {}
+        result = {}
         for part in parts:
             sign = 1
             if part.startswith("-"):
                 sign = -1
                 part = part[1:]
-
             match = re.search(r'[a-zA-Z]', part)
             if match:
-                index = match.start()
-                coefficient_str = part[:index]
-                variable_str = part[index:]
-
-                if coefficient_str == "" or coefficient_str == "/":
-                    coefficient = Fraction(1)
-                else:
-                    coefficient = Fraction(coefficient_str)
+                idx = match.start()
+                coef_str = part[:idx]
+                var_str = part[idx:]
+                coef = Fraction(1) if coef_str in ("", "/") else Fraction(coef_str)
             else:
-                coefficient_str = part
-                variable_str = ""
-                coefficient = Fraction(coefficient_str)
-
-            coefficient *= sign
-            result_terms[variable_str] = (
-                result_terms.get(variable_str, Fraction(0)) + coefficient
-            )
-
-        return cls(result_terms)
+                coef = Fraction(part)
+                var_str = ""
+            result[var_str] = result.get(var_str, Fraction(0)) + coef * sign
+        return cls(result)
 
     def is_zero(self):
         return len(self.terms) == 0
-
-    def is_constant(self):
-        return len(self.terms) == 0 or (
-            len(self.terms) == 1 and '' in self.terms
-        )
 
     def get_constant_value(self):
         return self.terms.get('', Fraction(0))
@@ -79,21 +57,20 @@ class AlgebraicExpression:
     def __add__(self, other):
         if not isinstance(other, AlgebraicExpression):
             other = AlgebraicExpression.parse(str(other))
-        new_terms = dict(self.terms)
-        for key, value in other.terms.items():
-            new_terms[key] = new_terms.get(key, Fraction(0)) + value
-        return AlgebraicExpression(new_terms)
+        new = dict(self.terms)
+        for k, v in other.terms.items():
+            new[k] = new.get(k, Fraction(0)) + v
+        return AlgebraicExpression(new)
 
-    def __radd__(self, other):
-        return self.__add__(other)
+    __radd__ = __add__
 
     def __sub__(self, other):
         if not isinstance(other, AlgebraicExpression):
             other = AlgebraicExpression.parse(str(other))
-        new_terms = dict(self.terms)
-        for key, value in other.terms.items():
-            new_terms[key] = new_terms.get(key, Fraction(0)) - value
-        return AlgebraicExpression(new_terms)
+        new = dict(self.terms)
+        for k, v in other.terms.items():
+            new[k] = new.get(k, Fraction(0)) - v
+        return AlgebraicExpression(new)
 
     def __rsub__(self, other):
         return AlgebraicExpression.parse(str(other)).__sub__(self)
@@ -101,112 +78,82 @@ class AlgebraicExpression:
     def __mul__(self, other):
         if not isinstance(other, AlgebraicExpression):
             other = AlgebraicExpression.parse(str(other))
-        new_terms = {}
-        for key_1, value_1 in self.terms.items():
-            for key_2, value_2 in other.terms.items():
-                if key_1 == "":
-                    combined = key_2
-                elif key_2 == "":
-                    combined = key_1
-                else:
-                    combined = "".join(sorted([key_1, key_2]))
-                coefficient = value_1 * value_2
-                new_terms[combined] = (
-                    new_terms.get(combined, Fraction(0)) + coefficient
-                )
-        return AlgebraicExpression(new_terms)
+        new = {}
+        for k1, v1 in self.terms.items():
+            for k2, v2 in other.terms.items():
+                combined = k2 if k1 == "" else k1 if k2 == "" else "".join(sorted([k1, k2]))
+                new[combined] = new.get(combined, Fraction(0)) + v1 * v2
+        return AlgebraicExpression(new)
 
-    def __rmul__(self, other):
-        return self.__mul__(other)
+    __rmul__ = __mul__
 
     def __truediv__(self, other):
         if not isinstance(other, AlgebraicExpression):
             other = AlgebraicExpression.parse(str(other))
         if other.is_zero():
-            raise ZeroDivisionError("Division by zero.")
+            raise ZeroDivisionError("División por cero.")
+        if len(other.terms) != 1:
+            raise ValueError("Solo se permite dividir entre un monomio.")
+        div_var, div_coef = list(other.terms.items())[0]
+        new = {}
+        for k, v in self.terms.items():
+            if k == div_var:
+                new_k = ""
+            elif div_var == "":
+                new_k = k
+            elif k.startswith(div_var):
+                new_k = k[len(div_var):]
+            else:
+                new_k = f"({k}/{div_var})" if k else f"(1/{div_var})"
+            new[new_k] = new.get(new_k, Fraction(0)) + v / div_coef
+        return AlgebraicExpression(new)
 
-        if other.is_constant():
-            constant = other.get_constant_value()
-            return AlgebraicExpression(
-                {k: v / constant for k, v in self.terms.items()}
-            )
+    def __eq__(self, other):
+        if not isinstance(other, AlgebraicExpression):
+            other = AlgebraicExpression.parse(str(other))
+        return self.terms == other.terms
 
-        if len(other.terms) == 1:
-            divisor_variable, divisor_coefficient = list(other.terms.items())[0]
-            new_terms = {}
-            for key, value in self.terms.items():
-                if key == divisor_variable:
-                    new_key = ""
-                elif key.startswith(divisor_variable):
-                    new_key = key[len(divisor_variable):]
-                else:
-                    new_key = (
-                        f"({key}/{divisor_variable})"
-                        if key else f"(1/{divisor_variable})"
-                    )
-                new_terms[new_key] = (
-                    new_terms.get(new_key, Fraction(0))
-                    + (value / divisor_coefficient)
-                )
-            return AlgebraicExpression(new_terms)
-
-        raise ValueError("Complex polynomial division is not supported.")
+    def __neg__(self):
+        return AlgebraicExpression({k: -v for k, v in self.terms.items()})
 
     def to_latex(self):
         if self.is_zero():
             return "0"
-
         parts = []
-        sorted_keys = sorted(self.terms.keys(), key=lambda x: (x == '', x))
-
-        for key in sorted_keys:
-            value = self.terms[key]
-            sign = " + " if value > 0 else " - "
-            absolute_value = abs(value)
-
-            formatted_variable = key
-            if key != "":
-                match = re.match(r'([a-zA-Z]+)(\d+)', key)
-                if match:
-                    formatted_variable = (
-                        f"{match.group(1)}_{{{match.group(2)}}}"
-                    )
-
-            if key == "":
-                term_str = (
-                    f"{absolute_value.numerator}"
-                    if absolute_value.denominator == 1
-                    else f"\\frac{{{absolute_value.numerator}}}"
-                         f"{{{absolute_value.denominator}}}"
-                )
+        for k in sorted(self.terms.keys(), key=lambda x: (x == '', x)):
+            v = self.terms[k]
+            sign = " + " if v > 0 else " - "
+            av = abs(v)
+            var_fmt = k
+            if k != "":
+                m = re.match(r'([a-zA-Z]+)(\d+)', k)
+                if m:
+                    var_fmt = f"{m.group(1)}_{{{m.group(2)}}}"
+            if k == "":
+                term = (f"{av.numerator}" if av.denominator == 1
+                        else f"\\frac{{{av.numerator}}}{{{av.denominator}}}")
             else:
-                if absolute_value == 1:
-                    term_str = formatted_variable
-                elif absolute_value.denominator == 1:
-                    term_str = f"{absolute_value.numerator}{formatted_variable}"
+                if av == 1:
+                    term = var_fmt
+                elif av.denominator == 1:
+                    term = f"{av.numerator}{var_fmt}"
                 else:
-                    term_str = (
-                        f"\\frac{{{absolute_value.numerator}}}"
-                        f"{{{absolute_value.denominator}}}"
-                        f"{formatted_variable}"
-                    )
-
-            parts.append((sign, term_str))
-
-        result = ""
-        for index, (sign, term_str) in enumerate(parts):
-            if index == 0:
-                result += "-" + term_str if sign == " - " else term_str
+                    term = f"\\frac{{{av.numerator}}}{{{av.denominator}}}{var_fmt}"
+            parts.append((sign, term))
+        res = ""
+        for i, (sign, term) in enumerate(parts):
+            if i == 0:
+                res += "-" + term if sign == " - " else term
             else:
-                result += sign + term_str
-        return result
+                res += sign + term
+        return res
 
     def __str__(self):
         return self.to_latex()
 
 
 # ==============================================================================
-# 2. UTILIDADES DE PARSEO Y FORMATO (compartidas con vectores.py)
+# 2. UTILIDADES
 # ==============================================================================
 
 def parse_expression(value_str):
@@ -220,147 +167,231 @@ def format_value(value):
 
 
 def format_matrix(matrix):
-    return [[format_value(element) for element in row] for row in matrix]
+    return [[format_value(v) for v in row] for row in matrix]
 
 
 def extract_coefficient_and_variable(value_str):
     value_str = str(value_str).strip().replace(" ", "")
     if not value_str:
         return "0", ""
-
     sign = ""
     if value_str.startswith("-"):
-        sign = "-"
-        value_str = value_str[1:]
+        sign, value_str = "-", value_str[1:]
     elif value_str.startswith("+"):
         value_str = value_str[1:]
-
     match = re.search(r'[a-zA-Z]', value_str)
     if match:
-        index = match.start()
-        coefficient_str = value_str[:index]
-        variable_str = value_str[index:]
-        if coefficient_str == "":
-            coefficient_str = "1"
-        return sign + coefficient_str, variable_str
-
+        i = match.start()
+        c = value_str[:i] or "1"
+        v = value_str[i:]
+        return sign + c, v
     return sign + value_str, ""
 
 
 # ==============================================================================
-# 3. OPERACIONES MATRICIALES
+# 3. GAUSS-JORDAN CON PASO A PASO DETALLADO
 # ==============================================================================
 
-def add_or_subtract_matrices(matrix_a, matrix_b, operation='add'):
-    rows_a, cols_a = len(matrix_a), len(matrix_a[0])
-    result = []
-    for i in range(rows_a):
-        row = []
-        for j in range(cols_a):
-            if operation == 'add':
-                row.append(matrix_a[i][j] + matrix_b[i][j])
-            else:
-                row.append(matrix_a[i][j] - matrix_b[i][j])
-        result.append(row)
-    return result
+def _matrix_copy(matrix):
+    return [row[:] for row in matrix]
 
 
-def scalar_multiply_matrix(scalar, matrix):
-    scalar_expression = parse_expression(scalar)
-    return [
-        [scalar_expression * matrix[i][j] for j in range(len(matrix[0]))]
-        for i in range(len(matrix))
-    ]
+def gauss_jordan_with_steps(augmented, num_vars):
+    """
+    augmented: matriz aumentada [A|b] de AlgebraicExpression
+    num_vars: número de variables (columnas antes de b)
+    Retorna: (steps_list, status, solution_dict, pivot_cols, free_cols)
+      status: 'unique' | 'infinite' | 'inconsistent'
+    """
+    m = len(augmented)
+    n = num_vars
+    aug = _matrix_copy(augmented)
+    steps = []
+    step_num = [1]
 
+    def add_step(title, desc, matrix):
+        steps.append({
+            'title': f'Paso {step_num[0]}: {title}',
+            'desc': desc,
+            'matrix': _matrix_copy(matrix) if matrix is not None else None
+        })
+        step_num[0] += 1
+
+    add_step(
+        "Matriz aumentada [A|b]",
+        "Se escribe el sistema como matriz aumentada. Las primeras columnas corresponden a los coeficientes de las variables; la última columna es el vector <em>b</em>.",
+        aug
+    )
+
+    pivot_positions = []
+    pivot_row = 0
+
+    # ---------- ELIMINACIÓN HACIA ADELANTE ----------
+    for col in range(n):
+        if pivot_row >= m:
+            break
+
+        # Buscar pivote en esta columna
+        pivot_candidate = None
+        for i in range(pivot_row, m):
+            if not aug[i][col].is_zero():
+                pivot_candidate = i
+                break
+
+        if pivot_candidate is None:
+            continue  # columna sin pivote -> variable libre (potencial)
+
+        # Intercambio si es necesario
+        if pivot_candidate != pivot_row:
+            aug[pivot_row], aug[pivot_candidate] = aug[pivot_candidate], aug[pivot_row]
+            add_step(
+                "Intercambio de filas",
+                f"F<sub>{pivot_row+1}</sub> ↔ F<sub>{pivot_candidate+1}</sub> para colocar un pivote en la posición ({pivot_row+1}, {col+1}).",
+                aug
+            )
+
+        # Escalar pivote a 1
+        pivot_val = aug[pivot_row][col]
+        if not (pivot_val == AlgebraicExpression.parse("1")):
+            aug[pivot_row] = [x / pivot_val for x in aug[pivot_row]]
+            add_step(
+                "Escalar fila pivote",
+                f"F<sub>{pivot_row+1}</sub> = F<sub>{pivot_row+1}</sub> ÷ ({pivot_val.to_latex()}) para convertir el pivote en 1.",
+                aug
+            )
+
+        pivot_positions.append((pivot_row, col))
+
+        # Eliminar debajo del pivote
+        for i in range(pivot_row + 1, m):
+            factor = aug[i][col]
+            if not factor.is_zero():
+                aug[i] = [aug[i][j] - factor * aug[pivot_row][j] for j in range(n + 1)]
+                add_step(
+                    "Eliminar debajo del pivote",
+                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pivot_row+1}</sub> para crear un cero debajo del pivote.",
+                    aug
+                )
+
+        pivot_row += 1
+
+    add_step(
+        "Forma Escalonada por Filas",
+        "La matriz alcanza la forma escalonada. Observe el patrón de escalera que forman los pivotes.",
+        aug
+    )
+
+    # ---------- VERIFICAR CONSISTENCIA ----------
+    for i in range(m):
+        if all(aug[i][j].is_zero() for j in range(n)) and not aug[i][n].is_zero():
+            add_step(
+                "Sistema Inconsistente",
+                "Aparece una fila del tipo [0 0 … 0 | b] con b ≠ 0. Por el <strong>teorema de existencia y unicidad</strong>, el sistema NO tiene solución.",
+                aug
+            )
+            return steps, 'inconsistent', None, [], []
+
+    # ---------- ELIMINACIÓN HACIA ATRÁS (RREF) ----------
+    for k in range(len(pivot_positions) - 1, -1, -1):
+        pr, pc = pivot_positions[k]
+        for i in range(pr):
+            factor = aug[i][pc]
+            if not factor.is_zero():
+                aug[i] = [aug[i][j] - factor * aug[pr][j] for j in range(n + 1)]
+                add_step(
+                    "Eliminar arriba del pivote",
+                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pr+1}</sub> para crear un cero arriba del pivote.",
+                    aug
+                )
+
+    add_step(
+        "Forma Escalonada Reducida (RREF)",
+        "Cada pivote es 1 y es el único elemento no nulo en su columna. Esta forma permite leer directamente las variables básicas en términos de las libres.",
+        aug
+    )
+
+    # ---------- CLASIFICAR VARIABLES ----------
+    pivot_cols = [pc for _, pc in pivot_positions]
+    free_cols = [c for c in range(n) if c not in pivot_cols]
+
+    if not free_cols:
+        # Solución única
+        solution = {}
+        for pr, pc in pivot_positions:
+            solution[pc] = aug[pr][n]
+        add_step(
+            "Solución Única",
+            "No existen variables libres. Por el <strong>teorema de existencia y unicidad</strong>, el sistema tiene solución única.",
+            None
+        )
+        return steps, 'unique', solution, pivot_cols, free_cols
+
+    # Infinitas soluciones: expresar variables básicas en términos de las libres
+    solution = {}
+    for pr, pc in pivot_positions:
+        expr = aug[pr][n]
+        for fc in free_cols:
+            coef = aug[pr][fc]
+            if not coef.is_zero():
+                expr = expr + AlgebraicExpression({f"x{fc+1}": -coef})
+        solution[pc] = expr
+
+    free_names = ", ".join(f"x<sub>{c+1}</sub>" for c in free_cols)
+    add_step(
+        "Infinitas Soluciones",
+        f"Existen {len(free_cols)} variable(s) libre(s): {free_names}. Por el <strong>teorema de existencia y unicidad</strong>, el sistema tiene infinitas soluciones (una por cada asignación de valores a las variables libres).",
+        None
+    )
+    return steps, 'infinite', solution, pivot_cols, free_cols
+
+
+# ==============================================================================
+# 4. OPERACIONES MATRICIALES (reutilizadas por vectores.py)
+# ==============================================================================
 
 def multiply_matrices(matrix_a, matrix_b):
     rows_a, cols_a = len(matrix_a), len(matrix_a[0])
     rows_b, cols_b = len(matrix_b), len(matrix_b[0])
-
     if cols_a != rows_b:
-        raise ValueError(
-            f"Cannot multiply matrices of dimensions "
-            f"{rows_a}x{cols_a} and {rows_b}x{cols_b}."
-        )
-
+        raise ValueError(f"No se pueden multiplicar matrices {rows_a}x{cols_a} y {rows_b}x{cols_b}.")
     result = []
     for i in range(rows_a):
         row = []
         for j in range(cols_b):
-            accumulated = AlgebraicExpression()
+            acc = AlgebraicExpression()
             for k in range(cols_a):
-                accumulated = accumulated + (matrix_a[i][k] * matrix_b[k][j])
-            row.append(accumulated)
+                acc = acc + matrix_a[i][k] * matrix_b[k][j]
+            row.append(acc)
         result.append(row)
     return result
 
 
-# ==============================================================================
-# 4. SISTEMAS LINEALES Y COMBINACIÓN LINEAL
-# ==============================================================================
-
-def reduced_row_echelon_form(matrix_input):
-    matrix = [[element for element in row] for row in matrix_input]
-    rows, cols = len(matrix), len(matrix[0])
-    pivot_row_index = 0
-
-    for col in range(cols - 1):
-        if pivot_row_index >= rows:
+def rref(matrix_input):
+    """RREF sin grabación de pasos (usado por vectores.py)."""
+    A = _matrix_copy(matrix_input)
+    rows, cols = len(A), len(A[0])
+    r = 0
+    for c in range(cols - 1):
+        if r >= rows:
             break
-
-        pivot_candidate = pivot_row_index
-        while pivot_candidate < rows and matrix[pivot_candidate][col].is_zero():
-            pivot_candidate += 1
-
-        if pivot_candidate == rows:
+        pivot = r
+        while pivot < rows and A[pivot][c].is_zero():
+            pivot += 1
+        if pivot == rows:
             continue
-
-        matrix[pivot_row_index], matrix[pivot_candidate] = (
-            matrix[pivot_candidate], matrix[pivot_row_index]
-        )
-        pivot_value = matrix[pivot_row_index][col]
-
-        matrix[pivot_row_index] = [
-            element / pivot_value for element in matrix[pivot_row_index]
-        ]
-
+        A[r], A[pivot] = A[pivot], A[r]
+        pv = A[r][c]
+        A[r] = [x / pv for x in A[r]]
         for i in range(rows):
-            if i != pivot_row_index:
-                factor = matrix[i][col]
-                matrix[i] = [
-                    matrix[i][j] - (factor * matrix[pivot_row_index][j])
-                    for j in range(cols)
-                ]
-
-        pivot_row_index += 1
-
-    return matrix
-
-
-def solve_linear_system(matrix_a, vector_b):
-    augmented = [matrix_a[i] + [vector_b[i]] for i in range(len(matrix_a))]
-    reduced = reduced_row_echelon_form(augmented)
-    solution = [reduced[i][-1] for i in range(len(matrix_a))]
-    return reduced, solution
-
-
-def check_linear_combination(vectors, vector_b):
-    num_rows, num_vectors = len(vector_b), len(vectors)
-    matrix_a = [
-        [vectors[j][i] for j in range(num_vectors)] for i in range(num_rows)
-    ]
-    reduced, scalars = solve_linear_system(matrix_a, vector_b)
-
-    for row in reduced:
-        coefficients_are_zero = all(el.is_zero() for el in row[:-1])
-        if coefficients_are_zero and not row[-1].is_zero():
-            return False, reduced, scalars
-
-    return True, reduced, scalars
+            if i != r:
+                f = A[i][c]
+                A[i] = [A[i][j] - f * A[r][j] for j in range(cols)]
+        r += 1
+    return A
 
 
 # ==============================================================================
-# 5. RUTA /matrices
+# 5. RUTA /matrices  (SOLO Gauss-Jordan)
 # ==============================================================================
 
 @bp_matrices.route('/matrices', methods=['GET', 'POST'])
@@ -368,111 +399,69 @@ def matrices():
     if request.method == 'GET':
         return render_template('matrices.html')
 
-    method = request.form.get('metodo')
     num_rows = int(request.form.get('filas', 2))
     num_cols = int(request.form.get('cols', 2))
-    steps, results, variable_names = [], [], []
+    pasos, resultados, nombres_vars = [], [], []
+    tipo_solucion = None
 
-    if request.method == 'POST':
-        try:
-            if method in ['gauss', 'gauss_jordan']:
-                matrix_a = []
-                vector_b = []
-                variable_names = [f"x_{{{j+1}}}" for j in range(num_cols)]
+    try:
+        matrix_a = []
+        vector_b = []
+        variable_names = [f"x_{{{j+1}}}" for j in range(num_cols)]
 
-                for i in range(num_rows):
-                    row = []
-                    for j in range(num_cols):
-                        raw_value = request.form.get(f'a_{i}_{j}', '0')
-                        coefficient_str, variable_str = (
-                            extract_coefficient_and_variable(raw_value)
-                        )
-                        row.append(parse_expression(coefficient_str))
+        for i in range(num_rows):
+            row = []
+            for j in range(num_cols):
+                raw = request.form.get(f'a_{i}_{j}', '0')
+                coef_str, var_str = extract_coefficient_and_variable(raw)
+                row.append(parse_expression(coef_str))
+                if var_str:
+                    m = re.match(r'^([a-zA-Z]+)(\d+)$', var_str)
+                    variable_names[j] = f"{m.group(1)}_{{{m.group(2)}}}" if m else var_str
+            matrix_a.append(row)
+            raw_b = request.form.get(f'b_{i}', '0')
+            b_coef, _ = extract_coefficient_and_variable(raw_b)
+            vector_b.append(parse_expression(b_coef))
 
-                        if variable_str:
-                            match = re.match(r'^([a-zA-Z]+)(\d+)$', variable_str)
-                            if match:
-                                variable_names[j] = (
-                                    f"{match.group(1)}_{{{match.group(2)}}}"
-                                )
-                            else:
-                                variable_names[j] = variable_str
-                    matrix_a.append(row)
+        augmented = [matrix_a[i] + [vector_b[i]] for i in range(num_rows)]
 
-                    raw_b = request.form.get(f'b_{i}', '0')
-                    coefficient_b, _ = extract_coefficient_and_variable(raw_b)
-                    vector_b.append(parse_expression(coefficient_b))
+        steps_dict, status, solution, pivot_cols, free_cols = gauss_jordan_with_steps(
+            augmented, num_cols
+        )
 
-                reduced, solution = solve_linear_system(matrix_a, vector_b)
-                original = [
-                    matrix_a[i] + [vector_b[i]] for i in range(len(matrix_a))
-                ]
-
-                steps.append((
-                    "Matriz Original [A|b]",
-                    "Ecuación matricial Ax = b:",
-                    format_matrix(original),
-                ))
-                steps.append((
-                    "Forma Escalonada Reducida (RREF)",
-                    "Matriz resultante por Gauss-Jordan:",
-                    format_matrix(reduced),
-                ))
-
-                results = [format_value(x) for x in solution]
-
-            elif method == 'comb_lineal':
-                vectors = [
-                    [
-                        parse_expression(request.form.get(f'v_{i}_{j}', '0'))
-                        for i in range(num_rows)
-                    ]
-                    for j in range(num_cols)
-                ]
-                vector_b = [
-                    parse_expression(request.form.get(f'b_{i}', '0'))
-                    for i in range(num_rows)
-                ]
-
-                is_combination, reduced, scalars = check_linear_combination(
-                    vectors, vector_b
-                )
-                steps.append((
-                    "Sistema Aumentado",
-                    "Evaluación de combinación lineal:",
-                    format_matrix(reduced),
-                ))
-
-                if is_combination:
-                    steps.append((
-                        "Resultado",
-                        "¡El vector $b$ SÍ es combinación lineal!",
-                        None,
-                    ))
-                    results = [format_value(c) for c in scalars]
-                    variable_names = [
-                        f"c_{{{i+1}}}" for i in range(len(scalars))
-                    ]
-                else:
-                    steps.append((
-                        "Resultado",
-                        "El vector $b$ NO es combinación lineal.",
-                        None,
-                    ))
-
-        except Exception as exception:
-            steps.append((
-                "Error Algebraico",
-                f"Sintaxis o cálculo no válido: {str(exception)}",
-                None,
+        # Convertir a formato (título, explicación, matriz) esperado por el template
+        for s in steps_dict:
+            pasos.append((
+                s['title'],
+                s['desc'],
+                format_matrix(s['matrix']) if s['matrix'] is not None else None
             ))
+
+        if status == 'inconsistent':
+            tipo_solucion = 'inconsistente'
+        elif status == 'unique':
+            tipo_solucion = 'unica'
+            for pc in sorted(solution.keys()):
+                nombres_vars.append(variable_names[pc])
+                resultados.append(solution[pc].to_latex())
+        else:  # infinite
+            tipo_solucion = 'infinitas'
+            for pc in sorted(solution.keys()):
+                nombres_vars.append(variable_names[pc])
+                resultados.append(solution[pc].to_latex())
+            for fc in free_cols:
+                nombres_vars.append(variable_names[fc])
+                resultados.append(f"{variable_names[fc]}\\;\\text{{libre}}")
+
+    except Exception as e:
+        pasos.append(("Error", f"Sintaxis o cálculo no válido: {str(e)}", None))
 
     return render_template(
         'matrices.html',
-        pasos=steps,
-        resultados=results,
-        nombres_vars=variable_names,
-        metodo=method,
+        pasos=pasos,
+        resultados=resultados,
+        nombres_vars=nombres_vars,
+        tipo_solucion=tipo_solucion,
         filas=num_rows,
         cols=num_cols,
     )
