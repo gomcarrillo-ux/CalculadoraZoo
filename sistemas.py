@@ -5,7 +5,6 @@ from flask import Blueprint, render_template, request
 bp_sistemas = Blueprint('sistemas', __name__)
 
 
-
 # LÓGICA DE CONVERSIÓN
 
 def convert_decimal_to_base(decimal_value, target_base):
@@ -37,6 +36,17 @@ def convert_base_to_decimal(number_str, source_base):
     """Convierte un número en base origen a decimal. Devuelve (valor, pasos_html)."""
     number_str = str(number_str).strip().upper()
     hex_digits = "0123456789ABCDEF"
+    
+    # ---------------- VALIDACIÓN DE CARACTERES ----------------
+    # Define únicamente los caracteres válidos para la base seleccionada
+    valid_digits = hex_digits[:source_base]
+    for character in number_str:
+        if character not in valid_digits:
+            raise ValueError(
+                f"El dígito '{character}' no es válido para la base {source_base}."
+            )
+    # -----------------------------------------------------------
+
     accumulated = 0
     length = len(number_str)
     steps = []
@@ -106,6 +116,8 @@ def sistemas():
             'Octal': octal_value,
             'Hexadecimal': hexadecimal_value,
         }
+    except ValueError as e:
+        error = str(e)
     except Exception:
         error = (
             f"El valor '{input_number}' no es válido para base {source_base}."
