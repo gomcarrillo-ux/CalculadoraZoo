@@ -63,11 +63,11 @@
                 </div>
                 <div class="col-md-6">
                     <label class="fw-bold text-secondary">2. Filas (Dimensión n):</label>
-                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="2" max="5" onchange="generarGrid()">
+                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="1" max="10" onchange="generarGrid()">
                 </div>
                 <div class="col-md-6">
                     <label class="fw-bold text-secondary">3. Columnas (Número de vectores k):</label>
-                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 3 }}" min="2" max="5" onchange="generarGrid()">
+                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 3 }}" min="1" max="10" onchange="generarGrid()">
                 </div>
             </div>
             <div id="grid-container" class="mb-4"></div>
@@ -87,12 +87,7 @@
                     <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
                     {% if matriz %}
                         <div class="fs-5 text-center text-dark">
-                            $$ \begin{bmatrix}
-                            {% for fila in matriz %}
-                                {% for val in fila %} {{ val }} {% if not loop.last %} & {% endif %} {% endfor %}
-                                {% if not loop.last %} \\ {% endif %}
-                            {% endfor %}
-                            \end{bmatrix} $$
+                            $$\begin{bmatrix}                             {\% for fila in matriz \%}                                 {\% for val in fila \%} {{ val }} {\% if not loop.last \%} & {\% endif \%} {\% endfor \%}                                 {\% if not loop.last \%} \\ {\% endif \%}                             {\% endfor \%}                             \end{bmatrix}$$
                         </div>
                     {% endif %}
                 </div>
@@ -124,7 +119,7 @@
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
                         <div class="p-3 fs-4 rounded-3" style="background-color: #fff3e0; border: 2px solid #ffcc80;">
-                            $ {{ nombres_vars[i] }} = {{ resultados[i] }} $
+                            ${{ nombres_vars[i] }} = {{ resultados[i] }}$
                         </div>
                     </div>
                 {% endfor %}
@@ -151,8 +146,8 @@
 
     function generarGrid() {
         gridContainer.innerHTML = "";
-        const filas = parseInt(numFilas.value) || 3;
-        const cols = parseInt(numCols.value) || 3;
+        const filas = Math.max(1, parseInt(numFilas.value) || 1);
+        const cols = Math.max(1, parseInt(numCols.value) || 1);
         const metodo = metodoSelect.value;
 
         if (metodo === 'comb_lineal') {

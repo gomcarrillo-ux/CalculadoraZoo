@@ -85,7 +85,7 @@ def check_linear_independence(vectors):
     Determina si los vectores son linealmente independientes.
     Retorna: (independent, reduced, relation_info)
     """
-    if not vectors:
+    if not vectors or not vectors[0]:
         return True, [], None
 
     n = len(vectors[0])
@@ -111,13 +111,14 @@ def vectores():
     if request.method == 'GET':
         return render_template('vectores.html')
 
-    metodo = request.form.get('metodo', 'comb_lineal')
-    num_rows = int(request.form.get('filas', 2))
-    num_cols = int(request.form.get('cols', 2))
     pasos, resultados, nombres_vars = [], [], []
     conclusion = None
+    metodo = request.form.get('metodo', 'comb_lineal')
 
     try:
+        num_rows = int(request.form.get('filas', 2))
+        num_cols = int(request.form.get('cols', 2))
+
         # COMBINACIÓN LINEAL
         if metodo == 'comb_lineal':
             vectors = [
@@ -161,7 +162,7 @@ def vectores():
                     resultados.append(solution[pc].to_latex())
                 for fc in free_cols:
                     nombres_vars.append(f"x_{{{fc+1}}}")
-                    resultados.append(f"\\text{{libre}}")
+                    resultados.append(r"\text{libre}")
                 conclusion = "combinacion_infinita"
 
             else:
@@ -203,10 +204,9 @@ def vectores():
                 solution, free_cols = relation
                 pasos.append((
                     "Paso 3: Conclusión",
-                    "Al menos una columna no contiene pivote. <strong>Existen variables libres</strong>, por lo que Ax = 0 tiene soluciones no triviales. El conjunto es <strong>linealmente dependiente</strong>. Una posible relación de dependencia (con la variable libre igual a 1) es:",
+                    "Al menos una columna no contiene pivote. <strong>Existen variables libres</strong>, por lo que Ax = 0 tiene soluciones no triviales. El conjunto es <strong>linealmente dependiente</strong>. Una posible relación de dependencia (asumiendo variable libre = 1) es:",
                     None
                 ))
-                # Mostrar la relación de dependencia
                 for pc in sorted(solution.keys()):
                     nombres_vars.append(f"x_{{{pc+1}}}")
                     resultados.append(solution[pc].to_latex())
@@ -264,9 +264,13 @@ def vectores():
             resultados = [format_value(x) for x in result]
 
     except Exception as e:
-        pasos.append(("Error de Cálculo",
-                      f"Ocurrió un error al procesar las expresiones: {str(e)}",
-                      None))
+        num_rows = 2
+        num_cols = 2
+        pasos.append((
+            "Error de Cálculo",
+            f"Ocurrió un error al procesar las expresiones: {str(e)}",
+            None
+        ))
 
     return render_template(
         'vectores.html',
