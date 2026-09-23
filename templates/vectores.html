@@ -25,6 +25,7 @@
     </style>
 </head>
 <body>
+
 <div class="banner-fia shadow-sm">
     <img src="{{ url_for('static', filename='fia.png') }}" alt="FIA" class="img-fluid">
 </div>
@@ -51,26 +52,29 @@
 
     <div class="card-module">
         <form method="POST" id="form-magia">
+            <div class="mb-4">
+                <label class="fw-bold text-secondary mb-1">Operación o Propiedad a evaluar:</label>
+                <select name="metodo" id="metodo" class="form-select form-select-lg border-warning fw-bold" onchange="generarGrid()">
+                    <option value="comb_lineal" {% if metodo == 'comb_lineal' %}selected{% endif %}>1. ¿Es b combinación lineal de los vectores v1...vk?</option>
+                    <option value="independencia" {% if metodo == 'independencia' %}selected{% endif %}>2. Independencia Lineal de {v1, v2, ..., vk}</option>
+                    <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>3. Propiedad de Linealidad: A(u + v)</option>
+                    <option value="vec_au_av" {% if metodo == 'vec_au_av' %}selected{% endif %}>4. Propiedad de Linealidad: Au + Av</option>
+                </select>
+            </div>
+
             <div class="row g-3 mb-4">
-                <div class="col-md-12">
-                    <label class="fw-bold text-secondary">1. Seleccione la operación:</label>
-                    <select name="metodo" id="metodo" class="form-select border-secondary fw-bold" onchange="generarGrid()">
-                        <option value="comb_lineal" {% if metodo == 'comb_lineal' %}selected{% endif %}>Combinación Lineal: ¿b es combinación de v₁ … vₖ?</option>
-                        <option value="independencia" {% if metodo == 'independencia' %}selected{% endif %}>Independencia Lineal: ¿{v₁ … vₖ} es independiente?</option>
-                        <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>Linealidad: A(u + v)</option>
-                        <option value="vec_au_av" {% if metodo == 'vec_au_av' %}selected{% endif %}>Linealidad: Au + Av</option>
-                    </select>
+                <div class="col-md-6">
+                    <label class="fw-bold text-secondary">Dimensión de los vectores (Filas m):</label>
+                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
                 </div>
                 <div class="col-md-6">
-                    <label class="fw-bold text-secondary">2. Filas (Dimensión n):</label>
-                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="2" max="5" onchange="generarGrid()">
-                </div>
-                <div class="col-md-6">
-                    <label class="fw-bold text-secondary">3. Columnas (Número de vectores k):</label>
-                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 3 }}" min="2" max="5" onchange="generarGrid()">
+                    <label class="fw-bold text-secondary">Cantidad de vectores (Columnas k):</label>
+                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
                 </div>
             </div>
+
             <div id="grid-container" class="mb-4"></div>
+
             <button type="submit" class="btn btn-module fs-5 py-2">Calcular</button>
         </form>
     </div>
@@ -81,18 +85,14 @@
                 <img src="{{ url_for('static', filename='capiw.gif') }}" width="65" alt="Procesando">
                 <h3 style="color: #e65100; font-weight: bold; margin: 0;">Procedimiento paso a paso</h3>
             </div>
+
             {% for titulo, explicacion, matriz in pasos %}
                 <div class="paso-box">
                     <h5 style="color: #ef6c00; font-weight: bold;">{{ titulo }}</h5>
                     <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
                     {% if matriz %}
-                        <div class="fs-5 text-center text-dark">
-                            $$ \begin{bmatrix}
-                            {% for fila in matriz %}
-                                {% for val in fila %} {{ val }} {% if not loop.last %} & {% endif %} {% endfor %}
-                                {% if not loop.last %} \\ {% endif %}
-                            {% endfor %}
-                            \end{bmatrix} $$
+                        <div class="fs-5 text-center text-dark overflow-auto">
+                            $${{ matriz }}$$
                         </div>
                     {% endif %}
                 </div>
@@ -103,28 +103,27 @@
     {% if conclusion %}
         <div class="text-center mt-4">
             {% if conclusion == 'combinacion_unica' %}
-                <span class="badge bg-success badge-tipo">✔ b SÍ es combinación lineal (solución única)</span>
+                <span class="badge bg-success badge-tipo">✔ b SÍ es combinación lineal (Solución única)</span>
             {% elif conclusion == 'combinacion_infinita' %}
-                <span class="badge bg-info text-dark badge-tipo">∞ b SÍ es combinación lineal (infinitas soluciones)</span>
+                <span class="badge bg-success badge-tipo">✔ b SÍ es combinación lineal (Infinitas combinaciones)</span>
             {% elif conclusion == 'no_combinacion' %}
                 <span class="badge bg-danger badge-tipo">✘ b NO es combinación lineal</span>
             {% elif conclusion == 'independiente' %}
-                <span class="badge bg-success badge-tipo">✔ Linealmente Independiente</span>
+                <span class="badge bg-success badge-tipo">✔ Conjunto Linealmente Independiente (L.I.)</span>
             {% elif conclusion == 'dependiente' %}
-                <span class="badge bg-warning text-dark badge-tipo">⚠ Linealmente Dependiente</span>
+                <span class="badge bg-warning text-dark badge-tipo">⚠ Conjunto Linealmente Dependiente (L.D.)</span>
             {% endif %}
         </div>
     {% endif %}
 
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ffcc80; border-radius: 15px; background-color: white;">
-            <img src="{{ url_for('static', filename='capi.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
             <h2 style="color: #e65100; font-weight: bold;">Resultado</h2>
             <div class="row mt-3 justify-content-center">
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
                         <div class="p-3 fs-4 rounded-3" style="background-color: #fff3e0; border: 2px solid #ffcc80;">
-                            $ {{ nombres_vars[i] }} = {{ resultados[i] }} $
+                            ${{ nombres_vars[i] }} = {{ resultados[i] }}$
                         </div>
                     </div>
                 {% endfor %}
@@ -136,89 +135,84 @@
 <script>
     const numFilas = document.getElementById('filas');
     const numCols = document.getElementById('cols');
-    const metodoSelect = document.getElementById('metodo');
     const gridContainer = document.getElementById('grid-container');
 
-    function crearInput(nombre, claseExtra) {
+    function crearInput(nombre, claseExtra, placeholder = "") {
         const input = document.createElement('input');
         input.type = 'text';
         input.name = nombre;
         input.className = claseExtra;
         input.required = true;
         input.value = "0";
+        if (placeholder) input.placeholder = placeholder;
         return input;
     }
 
     function generarGrid() {
         gridContainer.innerHTML = "";
-        const filas = parseInt(numFilas.value) || 3;
-        const cols = parseInt(numCols.value) || 3;
-        const metodo = metodoSelect.value;
+        const metodo = document.getElementById('metodo').value;
+        const filas = parseInt(numFilas.value) || 2;
+        const cols = parseInt(numCols.value) || 2;
 
         if (metodo === 'comb_lineal') {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'text-center';
-            wrapper.innerHTML = '<h5 class="text-secondary mb-3 fw-bold">Vectores v₁ … vₖ (columnas) y vector b (última columna)</h5>';
             for (let i = 0; i < filas; i++) {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row';
-                for (let j = 0; j < cols; j++) rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'vec-val'));
+                rowDiv.className = 'grid-row align-items-center';
+                for (let j = 0; j < cols; j++) {
+                    rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
+                }
                 const sep = document.createElement('span');
-                sep.innerHTML = ' | ';
-                sep.className = 'fw-bold text-danger mx-2 align-self-center fs-4';
+                sep.innerHTML = ' = ';
+                sep.className = 'fw-bold text-secondary mx-2 align-self-center fs-4';
                 rowDiv.appendChild(sep);
-                rowDiv.appendChild(crearInput(`b_${i}`, 'vec-val result-cell'));
-                wrapper.appendChild(rowDiv);
+                rowDiv.appendChild(crearInput(`b_${i}`, 'gauss-val result-cell'));
+                gridContainer.appendChild(rowDiv);
             }
-            gridContainer.appendChild(wrapper);
-
         } else if (metodo === 'independencia') {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'text-center';
-            wrapper.innerHTML = '<h5 class="text-secondary mb-3 fw-bold">Vectores v₁ … vₖ (cada columna es un vector)</h5>';
             for (let i = 0; i < filas; i++) {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row';
-                for (let j = 0; j < cols; j++) rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'vec-val'));
-                wrapper.appendChild(rowDiv);
+                rowDiv.className = 'grid-row align-items-center';
+                for (let j = 0; j < cols; j++) {
+                    rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
+                }
+                gridContainer.appendChild(rowDiv);
             }
-            gridContainer.appendChild(wrapper);
+        } else if (metodo === 'vec_auv' || metodo === 'vec_au_av') {
+            const titleA = document.createElement('h6');
+            titleA.className = 'text-center text-secondary fw-bold mt-2';
+            titleA.innerText = 'Matriz A (' + filas + 'x' + cols + ')';
+            gridContainer.appendChild(titleA);
 
-        } else {
-            const flexContainer = document.createElement('div');
-            flexContainer.className = 'd-flex flex-wrap justify-content-center gap-4';
-
-            const divA = document.createElement('div');
-            divA.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Matriz A</h5>';
             for (let i = 0; i < filas; i++) {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row';
-                for (let j = 0; j < cols; j++) rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'vec-A'));
-                divA.appendChild(rowDiv);
+                rowDiv.className = 'grid-row align-items-center';
+                for (let j = 0; j < cols; j++) {
+                    rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'gauss-val'));
+                }
+                gridContainer.appendChild(rowDiv);
             }
 
-            const divU = document.createElement('div');
-            divU.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Vector u</h5>';
-            for (let i = 0; i < cols; i++) {
+            const titleUV = document.createElement('h6');
+            titleUV.className = 'text-center text-secondary fw-bold mt-3';
+            titleUV.innerText = 'Vectores u y v (Dimensión ' + cols + ')';
+            gridContainer.appendChild(titleUV);
+
+            for (let j = 0; j < cols; j++) {
                 const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row';
-                rowDiv.appendChild(crearInput(`u_${i}`, 'vec-U'));
-                divU.appendChild(rowDiv);
-            }
+                rowDiv.className = 'grid-row align-items-center';
+                const uLabel = document.createElement('span');
+                uLabel.className = 'fw-bold me-2 text-secondary';
+                uLabel.innerText = `u[${j+1}]:`;
+                rowDiv.appendChild(uLabel);
+                rowDiv.appendChild(crearInput(`u_${j}`, 'gauss-val'));
 
-            const divV = document.createElement('div');
-            divV.innerHTML = '<h5 class="text-secondary mb-2 text-center fw-bold">Vector v</h5>';
-            for (let i = 0; i < cols; i++) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row';
-                rowDiv.appendChild(crearInput(`v_${i}`, 'vec-V'));
-                divV.appendChild(rowDiv);
+                const vLabel = document.createElement('span');
+                vLabel.className = 'fw-bold ms-3 me-2 text-secondary';
+                vLabel.innerText = `v[${j+1}]:`;
+                rowDiv.appendChild(vLabel);
+                rowDiv.appendChild(crearInput(`v_${j}`, 'gauss-val'));
+                gridContainer.appendChild(rowDiv);
             }
-
-            flexContainer.appendChild(divA);
-            flexContainer.appendChild(divU);
-            flexContainer.appendChild(divV);
-            gridContainer.appendChild(flexContainer);
         }
     }
 
