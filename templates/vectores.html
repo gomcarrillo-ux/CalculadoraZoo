@@ -68,8 +68,17 @@
                     <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
                 </div>
                 <div class="col-md-6">
+<<<<<<< HEAD
                     <label class="fw-bold text-secondary">Cantidad de vectores (Columnas k):</label>
                     <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
+=======
+                    <label class="fw-bold text-secondary">2. Filas (Dimensión n):</label>
+                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="1" max="10" onchange="generarGrid()">
+                </div>
+                <div class="col-md-6">
+                    <label class="fw-bold text-secondary">3. Columnas (Número de vectores k):</label>
+                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 3 }}" min="1" max="10" onchange="generarGrid()">
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
                 </div>
             </div>
 
@@ -91,8 +100,13 @@
                     <h5 style="color: #ef6c00; font-weight: bold;">{{ titulo }}</h5>
                     <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
                     {% if matriz %}
+<<<<<<< HEAD
                         <div class="fs-5 text-center text-dark overflow-auto">
                             $${{ matriz }}$$
+=======
+                        <div class="fs-5 text-center text-dark">
+                            $$\begin{bmatrix}                             {\% for fila in matriz \%}                                 {\% for val in fila \%} {{ val }} {\% if not loop.last \%} & {\% endif \%} {\% endfor \%}                                 {\% if not loop.last \%} \\ {\% endif \%}                             {\% endfor \%}                             \end{bmatrix}$$
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
                         </div>
                     {% endif %}
                 </div>
@@ -150,9 +164,15 @@
 
     function generarGrid() {
         gridContainer.innerHTML = "";
+<<<<<<< HEAD
         const metodo = document.getElementById('metodo').value;
         const filas = parseInt(numFilas.value) || 2;
         const cols = parseInt(numCols.value) || 2;
+=======
+        const filas = Math.max(1, parseInt(numFilas.value) || 1);
+        const cols = Math.max(1, parseInt(numCols.value) || 1);
+        const metodo = metodoSelect.value;
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
 
         if (metodo === 'comb_lineal') {
             for (let i = 0; i < filas; i++) {

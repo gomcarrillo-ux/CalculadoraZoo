@@ -178,7 +178,15 @@ def check_linear_combination(vectors, vector_b):
 
 
 def check_linear_independence(vectors):
+<<<<<<< HEAD
     if not vectors:
+=======
+    """
+    Determina si los vectores son linealmente independientes.
+    Retorna: (independent, reduced, relation_info)
+    """
+    if not vectors or not vectors[0]:
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
         return True, [], None
 
     n = len(vectors[0])
@@ -198,13 +206,18 @@ def vectores():
     if request.method == 'GET':
         return render_template('vectores.html')
 
-    metodo = request.form.get('metodo', 'comb_lineal')
-    num_rows = int(request.form.get('filas', 2))
-    num_cols = int(request.form.get('cols', 2))
     pasos, resultados, nombres_vars = [], [], []
     conclusion = None
+    metodo = request.form.get('metodo', 'comb_lineal')
 
     try:
+<<<<<<< HEAD
+=======
+        num_rows = int(request.form.get('filas', 2))
+        num_cols = int(request.form.get('cols', 2))
+
+        # COMBINACIÓN LINEAL
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
         if metodo == 'comb_lineal':
             vectors = [
                 [parse_expression(request.form.get(f'v_{i}_{j}', '0')) for i in range(num_rows)]
@@ -251,7 +264,11 @@ def vectores():
                     resultados.append(solution_dict[pc].to_latex())
                 for fc in free_cols:
                     nombres_vars.append(f"x_{{{fc+1}}}")
+<<<<<<< HEAD
                     resultados.append("\\text{libre}")
+=======
+                    resultados.append(r"\text{libre}")
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
                 conclusion = "combinacion_infinita"
 
             else:
@@ -292,11 +309,19 @@ def vectores():
             else:
                 solution_dict, free_cols = relation
                 pasos.append((
+<<<<<<< HEAD
                     "Conclusión Final",
                     "Existen variables libres. El conjunto es <strong>linealmente dependiente</strong>.",
                     None
                 ))
                 for pc in sorted(solution_dict.keys()):
+=======
+                    "Paso 3: Conclusión",
+                    "Al menos una columna no contiene pivote. <strong>Existen variables libres</strong>, por lo que Ax = 0 tiene soluciones no triviales. El conjunto es <strong>linealmente dependiente</strong>. Una posible relación de dependencia (asumiendo variable libre = 1) es:",
+                    None
+                ))
+                for pc in sorted(solution.keys()):
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
                     nombres_vars.append(f"x_{{{pc+1}}}")
                     resultados.append(solution_dict[pc].to_latex())
                 for fc in free_cols:
@@ -352,7 +377,17 @@ def vectores():
             resultados = [format_value(x) for x in result]
 
     except Exception as e:
+<<<<<<< HEAD
         pasos.append(("Error de Cálculo", f"Ocurrió un error al procesar las expresiones: {str(e)}", None))
+=======
+        num_rows = 2
+        num_cols = 2
+        pasos.append((
+            "Error de Cálculo",
+            f"Ocurrió un error al procesar las expresiones: {str(e)}",
+            None
+        ))
+>>>>>>> 840160125716e8761b294d107b7435926de6277b
 
     return render_template(
         'vectores.html',
