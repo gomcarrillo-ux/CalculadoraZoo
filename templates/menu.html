@@ -75,7 +75,7 @@
             filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.5));
         }
 
-        /* TARJETA DE INFORMACIÓN UAM */
+        /* TARJETA DE INFORMACIÓN UAM CON IMÁGENES DE AUTORES Y DOCENTE */
         .info-card { 
             background-color: #ffffff; 
             color: #333333; 
@@ -84,6 +84,26 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
         }
         .logo-uam { max-width: 120px; height: auto; margin-bottom: 12px; }
+
+        .person-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 12px 16px;
+            height: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .person-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .avatar-img {
+            height: 85px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.2));
+        }
 
         /* MÓDULOS DE NAVEGACIÓN */
         .modules-container { 
@@ -177,15 +197,34 @@
 
                 <hr class="my-3">
 
-                <div class="row text-start justify-content-center">
-                    <div class="col-md-9">
-                        <p class="mb-1 fs-6"><strong>Autores:</strong></p>
-                        <ul class="mb-2 ps-3 fw-semibold text-dark">
-                            <li>Gabriel Omar Carrillo Picado</li>
-                            <li>Moisés Abraham Moraga Salazar</li>
-                        </ul>
-                        <p class="mb-0 fs-6"><strong>Docente:</strong> Carlos Iván Argüello Martínez</p>
+                <!-- INTEGRANTES Y DOCENTE CON AVATARES (prof.png y proff.png) -->
+                <div class="row g-3 text-start justify-content-center align-items-stretch">
+                    
+                    <!-- AUTORES (prof.png) -->
+                    <div class="col-md-6">
+                        <div class="person-box d-flex align-items-center gap-3">
+                            <img src="{{ url_for('static', filename='prof.png') }}" alt="Autores" class="avatar-img">
+                            <div>
+                                <strong class="text-primary d-block mb-1">Autores:</strong>
+                                <ul class="mb-0 ps-3 fw-semibold text-dark small">
+                                    <li>Gabriel Omar Carrillo Picado</li>
+                                    <li>Moisés Abraham Moraga Salazar</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- DOCENTE (proff.png) -->
+                    <div class="col-md-6">
+                        <div class="person-box d-flex align-items-center gap-3">
+                            <img src="{{ url_for('static', filename='proff.png') }}" alt="Docente" class="avatar-img">
+                            <div>
+                                <strong class="text-primary d-block mb-1">Docente:</strong>
+                                <p class="mb-0 fw-bold text-dark small">Carlos Iván Argüello Martínez</p>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
