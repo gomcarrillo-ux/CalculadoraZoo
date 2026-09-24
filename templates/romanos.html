@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nivel 4: Bioma Desértico - Números Romanos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary-desert: #a0522d;      /* Terracota / Marrón árido */
+      --secondary-desert: #d2691e;    /* Ocre cálido / Arena dorada */
+      --accent-desert: #e67e22;       /* Sol del desierto */
+      --bg-desert: #fdf6e7;           /* Arena clara */
+      --card-bg: #fffcf5;             /* Blanco cálido */
+      --border-desert: #e6c896;       /* Bordes de duna */
+      --text-desert: #3e2723;         /* Marrón oscuro para texto */
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-desert);
+      color: var(--text-desert);
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 950px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    /* BANNER SUPERIOR DE NAVEGACIÓN */
+    .btn-back {
+      background-color: var(--primary-desert);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-back:hover {
+      background-color: #7b3d1f;
+      color: white;
+    }
+
+    /* HEADER DESÉRTICO */
+    .header-desert {
+      background: linear-gradient(135deg, #8b4513, #cd853f, #d2691e);
+      color: white;
+      border-radius: 18px;
+      padding: 25px 35px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 6px 18px rgba(139, 69, 19, 0.25);
+      border: 2px solid #b86d29;
+    }
+
+    .header-text h1 {
+      margin: 0 0 8px 0;
+      font-size: 2.1rem;
+      font-weight: 800;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .header-text p {
+      margin: 0;
+      opacity: 0.95;
+      font-size: 1.05rem;
+    }
+
+    .header-img {
+      max-height: 110px;
+      object-fit: contain;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+    }
+
+    /* TARJETA DE FORMULARIO DE CONVERSIÓN */
+    .card-form {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 25px 30px;
+      border: 2px solid var(--border-desert);
+      box-shadow: 0 4px 12px rgba(160, 82, 45, 0.08);
+    }
+
+    .form-label {
+      font-weight: bold;
+      color: var(--primary-desert);
+    }
+
+    .btn-convert {
+      background: linear-gradient(135deg, var(--secondary-desert), var(--accent-desert));
+      color: white;
+      font-weight: bold;
+      border: none;
+      padding: 10px 25px;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(210, 105, 30, 0.3);
+    }
+
+    .btn-convert:hover {
+      background: linear-gradient(135deg, #b85b14, #d35400);
+      color: white;
+    }
+
+    /* SECCIÓN DE PASOS */
+    .section-steps {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 25px 30px;
+      border-left: 8px solid var(--secondary-desert);
+      border-top: 1px solid var(--border-desert);
+      border-right: 1px solid var(--border-desert);
+      border-bottom: 1px solid var(--border-desert);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.7rem;
+      color: var(--primary-desert);
+      font-weight: bold;
+    }
+
+    .gif-pasos {
+      height: 65px;
+      width: auto;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .step-item {
+      background: #fff8e7;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid #f3e0b5;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .step-number {
+      background: var(--secondary-desert);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .side-img {
+      width: 100%;
+      max-width: 230px;
+      border-radius: 12px;
+      object-fit: contain;
+      margin: 0 auto;
+      display: block;
+    }
+
+    /* SECCIÓN DE RESULTADOS */
+    .section-results {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 25px 30px;
+      border-left: 8px solid var(--primary-desert);
+      border-top: 1px solid var(--border-desert);
+      border-right: 1px solid var(--border-desert);
+      border-bottom: 1px solid var(--border-desert);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .gif-resultados {
+      height: 80px;
+      width: auto;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .result-card {
+      background: #fdf2e9;
+      border: 1px solid #fadbd8;
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .result-info h3 {
+      margin: 0 0 5px 0;
+      color: var(--primary-desert);
+      font-size: 1.1rem;
+    }
+
+    .result-info p {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: var(--text-desert);
+    }
+
+    .result-icon-img {
+      max-height: 80px;
+      object-fit: contain;
+    }
+
+    @media (max-width: 768px) {
+      .steps-grid, .results-grid {
+        grid-template-columns: 1fr;
+      }
+      .header-desert {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- BOTÓN VOLVER AL MENÚ -->
+    <div>
+      <a href="/" class="btn-back">⬅ Volver al Menú Principal</a>
+    </div>
+
+    <!-- ENCABEZADO CON SER1.PNG -->
+    <header class="header-desert">
+      <div class="header-text">
+        <h1>Nivel 4: Bioma Desértico 🐍🐫</h1>
+        <p>Conversor de Números Romanos y Arábigos Paso a Paso</p>
+      </div>
+      <!-- Imagen de la serpiente de bienvenida en el encabezado -->
+      <img src="{{ url_for('static', filename='ser1.png') }}" alt="Mascota Desértica" class="header-img">
+    </header>
+
+    <!-- FORMULARIO DE ENTRADA -->
+    <div class="card-form">
+      <form method="POST" action="/romanos">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-5">
+            <label for="modo" class="form-label">Modo de Conversión</label>
+            <select name="modo" id="modo" class="form-select">
+              <option value="arabico_a_romano" {% if modo == 'arabico_a_romano' %}selected{% endif %}>Arábigo ➔ Romano</option>
+              <option value="romano_a_arabico" {% if modo == 'romano_a_arabico' %}selected{% endif %}>Romano ➔ Arábigo</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label for="numero" class="form-label">Valor a Convertir</label>
+            <input type="text" name="numero" id="numero" class="form-control" placeholder="Ej. 2024 o MMXXIV" value="{{ numero if numero else '' }}" required>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-convert w-100">Convertir</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- MOSTRAR MENSAJE DE ERROR -->
+    {% if error %}
+      <div class="alert alert-danger shadow-sm border-2 rounded-3" role="alert">
+        <strong>⚠️ Error:</strong> {{ error|safe }}
+      </div>
+    {% endif %}
+
+    <!-- SECCIÓN DE PASOS CON CAM.GIF Y CAM1.PNG -->
+    {% if pasos %}
+    <section class="section-steps">
+      <div class="section-title">
+        <!-- GIF animado del camello avanzando en los pasos -->
+        <img src="{{ url_for('static', filename='cam.gif') }}" alt="Camello en movimiento" class="gif-pasos">
+        <h2>Pasos del Procedimiento</h2>
+      </div>
+
+      <div class="steps-grid">
+        <div class="steps-list">
+          {% for titulo, explicacion in pasos %}
+          <div class="step-item">
+            <span class="step-number">{{ loop.index }}</span>
+            <div>
+              <strong>{{ titulo }}</strong>
+              <div style="margin-top: 4px; font-size: 0.95rem;">{{ explicacion|safe }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Camello de carga al lado de los pasos -->
+        <div>
+          <img src="{{ url_for('static', filename='cam1.png') }}" alt="Camello del desierto" class="side-img">
+        </div>
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- SECCIÓN DE RESULTADOS CON SER.GIF, SER2.PNG Y CAM2.PNG -->
+    {% if resultados %}
+    <section class="section-results">
+      <div class="section-title">
+        <!-- GIF animado de la serpiente revelando el resultado -->
+        <img src="{{ url_for('static', filename='ser.gif') }}" alt="Encantador de serpientes" class="gif-resultados">
+        <h2>Resultados Obtenidos</h2>
+      </div>
+
+      <div class="results-grid">
+        {% for clave, valor in resultados.items() %}
+        <div class="result-card">
+          <div class="result-info">
+            <h3>{{ clave }}</h3>
+            <p>{{ valor }}</p>
+          </div>
+          {% if loop.first %}
+            <!-- Imagen de la serpiente alegre acompañando el resultado -->
+            <img src="{{ url_for('static', filename='ser2.png') }}" alt="Serpiente resultado" class="result-icon-img">
+          {% else %}
+            <!-- Imagen del camello descansando -->
+            <img src="{{ url_for('static', filename='cam2.png') }}" alt="Camello resultado" class="result-icon-img">
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+</body>
+</html>
