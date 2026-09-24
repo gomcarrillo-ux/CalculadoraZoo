@@ -2,106 +2,245 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Álgebra Lineal - Selección de Módulo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #1a1a2e; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .banner-fia { background-color: #ffffff; padding: 10px 0; border-bottom: 2px solid #0f3460; text-align: center; }
+        body { 
+            background-color: #121224; 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* BANNER INSTITUCIONAL FIJO */
+        .banner-fia { 
+            background-color: #ffffff; 
+            padding: 10px 0; 
+            border-bottom: 3px solid #0f3460; 
+            text-align: center; 
+        }
         .banner-fia img { max-height: 55px; width: auto; }
 
-        .info-card { background-color: #ffffff; color: #333333; border-radius: 15px; padding: 25px; margin-top: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-        .logo-uam { max-width: 130px; height: auto; margin-bottom: 15px; }
+        /* CONTENEDOR TRIPLE COLUMNA (IZQ - CENTRO - DER) */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 20px;
+            max-width: 1500px;
+            margin: 25px auto;
+            padding: 0 20px;
+            align-items: start;
+        }
 
-        .modules-container { background-color: #16213e; border-radius: 15px; padding: 30px; margin-top: 25px; border: 2px solid #0f3460; }
-        .title-modules { font-family: 'Courier New', monospace; font-size: 1.9rem; color: #f39c12; font-weight: bold; }
+        /* BANNERS LATERALES (ban2.png y ban1.png) */
+        .side-banner {
+            position: sticky;
+            top: 20px;
+            display: flex;
+            justify-content: center;
+        }
 
-        .grid-select { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; max-width: 850px; margin: 25px auto 0 auto; }
-        .module-card { background-color: #0f3460; border: 3px solid #1f4068; border-radius: 12px; padding: 20px; text-decoration: none; color: white; transition: all 0.3s ease; text-align: center; position: relative; }
-        .module-card:hover:not(.locked) { transform: translateY(-5px); border-color: #e94560; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); color: white; }
+        .side-banner img {
+            width: 100%;
+            max-height: 780px;
+            object-fit: contain;
+            filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.6));
+            border-radius: 12px;
+        }
+
+        /* COLUMNA CENTRAL */
+        .center-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* BANNER SUPERIOR (ban.png) */
+        .top-banner-container {
+            background: linear-gradient(145deg, #16213e, #0f3460);
+            border: 2px solid #1f4068;
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .top-banner-img {
+            max-height: 280px;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.5));
+        }
+
+        /* TARJETA DE INFORMACIÓN UAM */
+        .info-card { 
+            background-color: #ffffff; 
+            color: #333333; 
+            border-radius: 15px; 
+            padding: 25px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
+        }
+        .logo-uam { max-width: 120px; height: auto; margin-bottom: 12px; }
+
+        /* MÓDULOS DE NAVEGACIÓN */
+        .modules-container { 
+            background-color: #16213e; 
+            border-radius: 15px; 
+            padding: 25px; 
+            border: 2px solid #0f3460; 
+            text-align: center;
+        }
+        .title-modules { 
+            font-family: 'Courier New', monospace; 
+            font-size: 1.8rem; 
+            color: #f39c12; 
+            font-weight: bold; 
+        }
+
+        .grid-select { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+
+        .module-card { 
+            background-color: #0f3460; 
+            border: 3px solid #1f4068; 
+            border-radius: 12px; 
+            padding: 18px; 
+            text-decoration: none; 
+            color: white; 
+            transition: all 0.3s ease; 
+            text-align: center; 
+            position: relative; 
+        }
+
+        .module-card:hover:not(.locked) { 
+            transform: translateY(-5px); 
+            border-color: #e94560; 
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); 
+            color: white; 
+        }
 
         .module-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #444; }
-        .badge-locked { position: absolute; top: 10px; right: 10px; background-color: #e74c3c; color: white; font-size: 0.75rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; }
-        .emoji-big { font-size: 3.5rem; margin-bottom: 10px; }
+        .badge-locked { position: absolute; top: 8px; right: 8px; background-color: #e74c3c; color: white; font-size: 0.7rem; font-weight: bold; padding: 3px 6px; border-radius: 6px; }
+        .emoji-big { font-size: 3rem; margin-bottom: 8px; }
+
+        /* ADAPTABILIDAD A PANTALLAS PEQUEÑAS */
+        @media (max-width: 1100px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .side-banner {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- BANNER SUPERIOR GENERAL -->
+    <!-- BANNER FIA SUPERIOR -->
     <div class="banner-fia shadow-sm">
         <img src="{{ url_for('static', filename='fia.png') }}" alt="Facultad de Ingeniería y Arquitectura" class="img-fluid">
     </div>
 
-    <div class="container my-4" style="max-width: 850px;">
+    <!-- ESTRUCTURA PRINCIPAL DEL MENÚ -->
+    <div class="main-layout">
 
-        <!-- ENCABEZADO INSTITUCIONAL -->
-        <div class="info-card text-center">
-            <img src="{{ url_for('static', filename='logo.png') }}" alt="Universidad Americana" class="logo-uam d-block mx-auto">
-            <h3 style="color: #005a9c; font-weight: bold;" class="mb-1">Universidad Americana</h3>
-            <h5 class="text-secondary fw-bold mb-2">Facultad de Ingeniería y Arquitectura</h5>
+        <!-- LADO IZQUIERDO: ban2.png -->
+        <aside class="side-banner">
+            <img src="{{ url_for('static', filename='ban2.png') }}" alt="Personajes Izquierda">
+        </aside>
 
-            <div class="py-2 my-2 rounded-3" style="background-color: #e3f2fd; border: 1px solid #90caf9;">
-                <h4 style="color: #0d47a1; font-weight: bold;" class="mb-0">Asignatura: Álgebra Lineal (MTM0120)</h4>
-                <h5 style="color: #1565c0; font-weight: bold;" class="mt-1 mb-0">Grupo 2</h5>
+        <!-- CONTENIDO CENTRAL -->
+        <main class="center-content">
+
+            <!-- PARTE SUPERIOR DEL MENÚ: ban.png -->
+            <div class="top-banner-container">
+                <img src="{{ url_for('static', filename='ban.png') }}" alt="Personajes Superior" class="top-banner-img">
             </div>
 
-            <hr class="my-3">
+            <!-- ENCABEZADO INSTITUCIONAL DE LA UAM -->
+            <div class="info-card text-center">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="Universidad Americana" class="logo-uam d-block mx-auto">
+                <h3 style="color: #005a9c; font-weight: bold;" class="mb-1">Universidad Americana</h3>
+                <h5 class="text-secondary fw-bold mb-2">Facultad de Ingeniería y Arquitectura</h5>
 
-            <div class="row text-start justify-content-center">
-                <div class="col-md-8">
-                    <p class="mb-1 fs-6"><strong>Autores:</strong></p>
-                    <ul class="mb-3 ps-3 fw-semibold text-dark">
-                        <li>Gabriel Omar Carrillo Picado</li>
-                        <li>Moisés Abraham Moraga Salazar</li>
-                    </ul>
-                    <p class="mb-0 fs-6"><strong>Docente:</strong> Carlos Iván Argüello Martínez</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN DE SELECCIÓN DE MÓDULOS -->
-        <div class="modules-container text-center">
-            <h2 class="title-modules">Calculadora Z00</h2>
-            <p class="text-white-50 mt-2 mb-0">Calculadora con un diseño más amigable con herramientas computacionales para Álgebra Lineal</p>
-            <div class="grid-select">
-
-                <!-- MÓDULO 1: MATRICES -->
-                <a href="/matrices" class="module-card" style="border-color: #ce93d8;">
-                    <div class="emoji-big">🎩🐰</div>
-                    <h4 style="color: #ce93d8;">Módulo 1</h4>
-                    <p class="mb-0 text-white-50">Operaciones con Matrices </p>
-                </a>
-
-                <!-- MÓDULO 2: VECTORES -->
-                <a href="/vectores" class="module-card" style="border-color: #ffb74d;">
-                    <div class="emoji-big">🌴🦦</div>
-                    <h4 style="color: #ffb74d;">Módulo 2</h4>
-                    <p class="mb-0 text-white-50">Operaciones Vectoriales</p>
-                </a>
-
-                <!-- MÓDULO 3: SISTEMAS NUMÉRICOS -->
-                <a href="/sistemas" class="module-card" style="border-color: #4dd0e1;">
-                    <div class="emoji-big">🫧🦎</div>
-                    <h4 style="color: #4dd0e1;">Módulo 3</h4>
-                    <p class="mb-0 text-white-50">Sistemas Numéricos</p>
-                </a>
-
-                <!-- MÓDULO 4: NÚMEROS ROMANOS (DESIERTO) -->
-                <a href="/romanos" class="module-card" style="border-color: #f4a460;">
-                    <div class="emoji-big">🐍🐫</div>
-                    <h4 style="color: #f4a460;">Módulo 4</h4>
-                    <p class="mb-0 text-white-50">Números Romanos (Bioma Desértico)</p>
-                </a>
-
-                <!-- MÓDULO 5 (BLOQUEADO) -->
-                <div class="module-card locked">
-                    <span class="badge-locked">Proximamente...</span>
-                    <div class="emoji-big">📐⚡</div>
-                    <h4 class="text-secondary">Módulo 5</h4>
-                    <p class="mb-0 text-white-50">???</p>
+                <div class="py-2 my-2 rounded-3" style="background-color: #e3f2fd; border: 1px solid #90caf9;">
+                    <h4 style="color: #0d47a1; font-weight: bold;" class="mb-0">Asignatura: Álgebra Lineal (MTM0120)</h4>
+                    <h5 style="color: #1565c0; font-weight: bold;" class="mt-1 mb-0">Grupo 2</h5>
                 </div>
 
+                <hr class="my-3">
+
+                <div class="row text-start justify-content-center">
+                    <div class="col-md-9">
+                        <p class="mb-1 fs-6"><strong>Autores:</strong></p>
+                        <ul class="mb-2 ps-3 fw-semibold text-dark">
+                            <li>Gabriel Omar Carrillo Picado</li>
+                            <li>Moisés Abraham Moraga Salazar</li>
+                        </ul>
+                        <p class="mb-0 fs-6"><strong>Docente:</strong> Carlos Iván Argüello Martínez</p>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <!-- SECCIÓN DE SELECCIÓN DE MÓDULOS -->
+            <div class="modules-container">
+                <h2 class="title-modules">Calculadora Z00</h2>
+                <p class="text-white-50 mt-1 mb-0">Calculadora con herramientas computacionales para Álgebra Lineal</p>
+                
+                <div class="grid-select">
+
+                    <!-- MÓDULO 1: MATRICES -->
+                    <a href="/matrices" class="module-card" style="border-color: #ce93d8;">
+                        <div class="emoji-big">🎩🐰</div>
+                        <h4 style="color: #ce93d8;">Módulo 1</h4>
+                        <p class="mb-0 text-white-50 fs-7">Operaciones con Matrices</p>
+                    </a>
+
+                    <!-- MÓDULO 2: VECTORES -->
+                    <a href="/vectores" class="module-card" style="border-color: #ffb74d;">
+                        <div class="emoji-big">🌴🦦</div>
+                        <h4 style="color: #ffb74d;">Módulo 2</h4>
+                        <p class="mb-0 text-white-50 fs-7">Operaciones Vectoriales</p>
+                    </a>
+
+                    <!-- MÓDULO 3: SISTEMAS NUMÉRICOS -->
+                    <a href="/sistemas" class="module-card" style="border-color: #4dd0e1;">
+                        <div class="emoji-big">🫧🦎</div>
+                        <h4 style="color: #4dd0e1;">Módulo 3</h4>
+                        <p class="mb-0 text-white-50 fs-7">Sistemas Numéricos</p>
+                    </a>
+
+                    <!-- MÓDULO 4: NÚMEROS ROMANOS (DESIERTO) -->
+                    <a href="/romanos" class="module-card" style="border-color: #f4a460;">
+                        <div class="emoji-big">🐍🐫</div>
+                        <h4 style="color: #f4a460;">Módulo 4</h4>
+                        <p class="mb-0 text-white-50 fs-7">Números Romanos</p>
+                    </a>
+
+                    <!-- MÓDULO 5 (BLOQUEADO) -->
+                    <div class="module-card locked">
+                        <span class="badge-locked">Próximamente</span>
+                        <div class="emoji-big">📐⚡</div>
+                        <h4 class="text-secondary">Módulo 5</h4>
+                        <p class="mb-0 text-white-50 fs-7">???</p>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+
+        <!-- LADO DERECHO: ban1.png -->
+        <aside class="side-banner">
+            <img src="{{ url_for('static', filename='ban1.png') }}" alt="Personajes Derecha">
+        </aside>
 
     </div>
 
