@@ -57,7 +57,7 @@
             gap: 20px;
         }
 
-        /* BANNER SUPERIOR (ban.png) */
+        /* BANNER SUPERIOR (DINÁMICO) */
         .top-banner-container {
             background: linear-gradient(145deg, #16213e, #0f3460);
             border: 2px solid #1f4068;
@@ -179,9 +179,9 @@
         <!-- CONTENIDO CENTRAL -->
         <main class="center-content">
 
-            <!-- PARTE SUPERIOR DEL MENÚ: ban.png -->
+            <!-- PARTE SUPERIOR DEL MENÚ: CAMBIA ALEATORIAMENTE -->
             <div class="top-banner-container">
-                <img src="{{ url_for('static', filename='ban.png') }}" alt="Personajes Superior" class="top-banner-img">
+                <img src="{{ url_for('static', filename=imagen_banner) }}" alt="Personajes Superior" class="top-banner-img">
             </div>
 
             <!-- ENCABEZADO INSTITUCIONAL DE LA UAM -->
@@ -197,7 +197,7 @@
 
                 <hr class="my-3">
 
-                <!-- INTEGRANTES Y DOCENTE CON AVATARES (prof.png y proff.png) -->
+                <!-- INTEGRANTES Y DOCENTE CON AVATARES -->
                 <div class="row g-3 text-start justify-content-center align-items-stretch">
                     
                     <!-- AUTORES (prof.png) -->
