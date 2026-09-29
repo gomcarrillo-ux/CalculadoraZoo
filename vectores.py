@@ -1,5 +1,5 @@
 # vectores.py
-"""Módulo de vectores: combinación lineal, independencia lineal y linealidad."""
+"""Módulo de vectores: combinación lineal, independencia lineal, linealidad y producto por escalar."""
 from flask import Blueprint, render_template, request
 
 from matrices import (
@@ -350,6 +350,39 @@ def vectores():
 
             nombres_vars = [f"r_{{{i+1}}}" for i in range(len(result))]
             resultados = [format_value(x) for x in result]
+
+        elif metodo == 'mult_escalar':
+            scalar = parse_expression(request.form.get('escalar', '1'))
+            vector_v = [
+                parse_expression(request.form.get(f'v_{i}', '0'))
+                for i in range(num_rows)
+            ]
+
+            v_latex = matrix_to_latex([[x] for x in vector_v])
+            pasos.append((
+                "Planteamiento: Producto por un Escalar",
+                f"Se multiplicará el escalar $c = {scalar.to_latex()}$ por el vector $\\mathbf{{v}}$:",
+                f"{scalar.to_latex()} \\cdot {v_latex}"
+            ))
+
+            comp_latex_list = [f"{scalar.to_latex()} \\cdot ({x.to_latex()})" for x in vector_v]
+            comp_matrix_latex = "\\begin{bmatrix} " + " \\\\ ".join(comp_latex_list) + " \\end{bmatrix}"
+            pasos.append((
+                "Paso 1: Multiplicación Componente a Componente",
+                "Cada componente del vector se multiplica individualmente por el escalar $c$:",
+                comp_matrix_latex
+            ))
+
+            result_vector = [scalar * x for x in vector_v]
+            result_latex = matrix_to_latex([[x] for x in result_vector])
+            pasos.append((
+                "Paso 2: Vector Resultante",
+                "Se efectúan los productos correspondientes para obtener el vector final:",
+                result_latex
+            ))
+
+            nombres_vars = [f"r_{{{i+1}}}" for i in range(len(result_vector))]
+            resultados = [format_value(x) for x in result_vector]
 
     except Exception as e:
         pasos.append(("Error de Cálculo", f"Ocurrió un error al procesar las expresiones: {str(e)}", None))

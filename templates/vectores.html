@@ -16,7 +16,7 @@
         .btn-module { background-color: #f57c00; color: white; font-weight: bold; width: 100%; border-radius: 10px; border: none; }
         .btn-module:hover { background-color: #e65100; color: white; }
         .grid-row { display: flex; justify-content: center; margin-bottom: 10px; }
-        .grid-row input { width: 75px; height: 50px; text-align: center; border: 2px solid #ffcc80; border-radius: 8px; margin: 0 4px; font-size: 1.1rem; }
+        .grid-row input { width: 90px; height: 50px; text-align: center; border: 2px solid #ffcc80; border-radius: 8px; margin: 0 4px; font-size: 1.1rem; }
         .result-cell { background-color: #fff3e0; font-weight: bold; border-color: #f57c00 !important; }
         #pantalla-carga { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 248, 225, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
         .paso-box { background-color: #fafafa; border-left: 5px solid #f57c00; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -47,7 +47,7 @@
             </div>
             <img src="{{ url_for('static', filename='capid.png') }}" width="100" alt="Ilustración 2">
         </div>
-        <p class="text-secondary fw-bold mt-2">Combinación lineal, independencia lineal y propiedades de linealidad</p>
+        <p class="text-secondary fw-bold mt-2">Combinación lineal, independencia lineal, linealidad y producto escalar</p>
     </div>
 
     <div class="card-module">
@@ -59,17 +59,18 @@
                     <option value="independencia" {% if metodo == 'independencia' %}selected{% endif %}>2. Independencia Lineal de {v1, v2, ..., vk}</option>
                     <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>3. Propiedad de Linealidad: A(u + v)</option>
                     <option value="vec_au_av" {% if metodo == 'vec_au_av' %}selected{% endif %}>4. Propiedad de Linealidad: Au + Av</option>
+                    <option value="mult_escalar" {% if metodo == 'mult_escalar' %}selected{% endif %}>5. Producto de un Escalar por un Vector: c · v</option>
                 </select>
             </div>
 
             <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label class="fw-bold text-secondary">Dimensión de los vectores (Filas m):</label>
-                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
+                <div class="col-md-6" id="box-filas">
+                    <label class="fw-bold text-secondary">Dimensión del vector / Filas (m):</label>
+                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="1" max="10" onchange="generarGrid()">
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="box-cols">
                     <label class="fw-bold text-secondary">Cantidad de vectores (Columnas k):</label>
-                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
+                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="1" max="5" onchange="generarGrid()">
                 </div>
             </div>
 
@@ -118,7 +119,7 @@
 
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ffcc80; border-radius: 15px; background-color: white;">
-            <h2 style="color: #e65100; font-weight: bold;">Resultado</h2>
+            <h2 style="color: #e65100; font-weight: bold;">Resultado Final</h2>
             <div class="row mt-3 justify-content-center">
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
@@ -135,6 +136,7 @@
 <script>
     const numFilas = document.getElementById('filas');
     const numCols = document.getElementById('cols');
+    const boxCols = document.getElementById('box-cols');
     const gridContainer = document.getElementById('grid-container');
 
     function crearInput(nombre, claseExtra, placeholder = "") {
@@ -151,67 +153,102 @@
     function generarGrid() {
         gridContainer.innerHTML = "";
         const metodo = document.getElementById('metodo').value;
-        const filas = parseInt(numFilas.value) || 2;
+        const filas = parseInt(numFilas.value) || 3;
         const cols = parseInt(numCols.value) || 2;
 
-        if (metodo === 'comb_lineal') {
-            for (let i = 0; i < filas; i++) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row align-items-center';
-                for (let j = 0; j < cols; j++) {
-                    rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
-                }
-                const sep = document.createElement('span');
-                sep.innerHTML = ' = ';
-                sep.className = 'fw-bold text-secondary mx-2 align-self-center fs-4';
-                rowDiv.appendChild(sep);
-                rowDiv.appendChild(crearInput(`b_${i}`, 'gauss-val result-cell'));
-                gridContainer.appendChild(rowDiv);
-            }
-        } else if (metodo === 'independencia') {
-            for (let i = 0; i < filas; i++) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row align-items-center';
-                for (let j = 0; j < cols; j++) {
-                    rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
-                }
-                gridContainer.appendChild(rowDiv);
-            }
-        } else if (metodo === 'vec_auv' || metodo === 'vec_au_av') {
-            const titleA = document.createElement('h6');
-            titleA.className = 'text-center text-secondary fw-bold mt-2';
-            titleA.innerText = 'Matriz A (' + filas + 'x' + cols + ')';
-            gridContainer.appendChild(titleA);
+        if (metodo === 'mult_escalar') {
+            boxCols.style.display = 'none';
+
+            const titleScalar = document.createElement('h6');
+            titleScalar.className = 'text-center text-secondary fw-bold mt-2';
+            titleScalar.innerText = 'Escalar c (Número o Expresión)';
+            gridContainer.appendChild(titleScalar);
+
+            const scalarRow = document.createElement('div');
+            scalarRow.className = 'grid-row align-items-center mb-3';
+            const scalarInput = crearInput('escalar', 'gauss-val result-cell');
+            scalarInput.value = "2";
+            scalarRow.appendChild(scalarInput);
+            gridContainer.appendChild(scalarRow);
+
+            const titleVec = document.createElement('h6');
+            titleVec.className = 'text-center text-secondary fw-bold mt-3';
+            titleVec.innerText = `Vector v (Dimensión ${filas})`;
+            gridContainer.appendChild(titleVec);
 
             for (let i = 0; i < filas; i++) {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'grid-row align-items-center';
-                for (let j = 0; j < cols; j++) {
-                    rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'gauss-val'));
-                }
+                const compInput = crearInput(`v_${i}`, 'gauss-val');
+                if (i === 0) compInput.value = "30.2";
+                else if (i === 1) compInput.value = "6400";
+                else if (i === 2) compInput.value = "360";
+                rowDiv.appendChild(compInput);
                 gridContainer.appendChild(rowDiv);
             }
 
-            const titleUV = document.createElement('h6');
-            titleUV.className = 'text-center text-secondary fw-bold mt-3';
-            titleUV.innerText = 'Vectores u y v (Dimensión ' + cols + ')';
-            gridContainer.appendChild(titleUV);
+        } else {
+            boxCols.style.display = 'block';
 
-            for (let j = 0; j < cols; j++) {
-                const rowDiv = document.createElement('div');
-                rowDiv.className = 'grid-row align-items-center';
-                const uLabel = document.createElement('span');
-                uLabel.className = 'fw-bold me-2 text-secondary';
-                uLabel.innerText = `u[${j+1}]:`;
-                rowDiv.appendChild(uLabel);
-                rowDiv.appendChild(crearInput(`u_${j}`, 'gauss-val'));
+            if (metodo === 'comb_lineal') {
+                for (let i = 0; i < filas; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'grid-row align-items-center';
+                    for (let j = 0; j < cols; j++) {
+                        rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
+                    }
+                    const sep = document.createElement('span');
+                    sep.innerHTML = ' = ';
+                    sep.className = 'fw-bold text-secondary mx-2 align-self-center fs-4';
+                    rowDiv.appendChild(sep);
+                    rowDiv.appendChild(crearInput(`b_${i}`, 'gauss-val result-cell'));
+                    gridContainer.appendChild(rowDiv);
+                }
+            } else if (metodo === 'independencia') {
+                for (let i = 0; i < filas; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'grid-row align-items-center';
+                    for (let j = 0; j < cols; j++) {
+                        rowDiv.appendChild(crearInput(`v_${i}_${j}`, 'gauss-val'));
+                    }
+                    gridContainer.appendChild(rowDiv);
+                }
+            } else if (metodo === 'vec_auv' || metodo === 'vec_au_av') {
+                const titleA = document.createElement('h6');
+                titleA.className = 'text-center text-secondary fw-bold mt-2';
+                titleA.innerText = 'Matriz A (' + filas + 'x' + cols + ')';
+                gridContainer.appendChild(titleA);
 
-                const vLabel = document.createElement('span');
-                vLabel.className = 'fw-bold ms-3 me-2 text-secondary';
-                vLabel.innerText = `v[${j+1}]:`;
-                rowDiv.appendChild(vLabel);
-                rowDiv.appendChild(crearInput(`v_${j}`, 'gauss-val'));
-                gridContainer.appendChild(rowDiv);
+                for (let i = 0; i < filas; i++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'grid-row align-items-center';
+                    for (let j = 0; j < cols; j++) {
+                        rowDiv.appendChild(crearInput(`a_${i}_${j}`, 'gauss-val'));
+                    }
+                    gridContainer.appendChild(rowDiv);
+                }
+
+                const titleUV = document.createElement('h6');
+                titleUV.className = 'text-center text-secondary fw-bold mt-3';
+                titleUV.innerText = 'Vectores u y v (Dimensión ' + cols + ')';
+                gridContainer.appendChild(titleUV);
+
+                for (let j = 0; j < cols; j++) {
+                    const rowDiv = document.createElement('div');
+                    rowDiv.className = 'grid-row align-items-center';
+                    const uLabel = document.createElement('span');
+                    uLabel.className = 'fw-bold me-2 text-secondary';
+                    uLabel.innerText = `u[${j+1}]:`;
+                    rowDiv.appendChild(uLabel);
+                    rowDiv.appendChild(crearInput(`u_${j}`, 'gauss-val'));
+
+                    const vLabel = document.createElement('span');
+                    vLabel.className = 'fw-bold ms-3 me-2 text-secondary';
+                    vLabel.innerText = `v[${j+1}]:`;
+                    rowDiv.appendChild(vLabel);
+                    rowDiv.appendChild(crearInput(`v_${j}`, 'gauss-val'));
+                    gridContainer.appendChild(rowDiv);
+                }
             }
         }
     }
