@@ -7,7 +7,6 @@ Permite el uso de librerías externas como 'roman'.
 import re
 from flask import Blueprint, render_template, request
 
-# Intento de uso de la librería externa 'roman' (permitida exclusivamente en este nivel)
 try:
     import roman
     HAS_ROMAN_LIB = True
@@ -16,7 +15,6 @@ except ImportError:
 
 bp_romanos = Blueprint('romanos', __name__)
 
-# Mapeo estándar de valores romanos
 ROMAN_MAP = [
     (1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
     (100, 'C'), (90, 'XC'), (50, 'L'), (40, 'XL'),
@@ -31,7 +29,6 @@ def arabic_to_roman(n):
     if not (1 <= n <= 3999):
         raise ValueError("El número arábigo debe estar entre 1 y 3999 para la notación romana estándar.")
     
-    # Verificación opcional con la librería externa
     lib_result = None
     if HAS_ROMAN_LIB:
         lib_result = roman.toRoman(n)
@@ -40,7 +37,6 @@ def arabic_to_roman(n):
     num = n
     res = ""
     
-    # Paso 1: Descomposición Decimal
     thousands = (n // 1000) * 1000
     hundreds = ((n % 1000) // 100) * 100
     tens = ((n % 100) // 10) * 10
@@ -58,7 +54,6 @@ def arabic_to_roman(n):
         f"$$ {n} = {' + '.join(decomp_parts)} $$"
     ))
     
-    # Paso 2: Conversión a Símbolos Romanos
     step2_desc = []
     for val, sym in ROMAN_MAP:
         while num >= val:
@@ -94,7 +89,6 @@ def roman_to_arabic(roman_str):
     
     steps = []
     
-    # Verificación con librería externa si está instalada
     if HAS_ROMAN_LIB:
         try:
             val_lib = roman.fromRoman(roman_str)
@@ -132,7 +126,6 @@ def roman_to_arabic(roman_str):
         "<br>".join(sub_steps)
     ))
     
-    # Re-conversión para garantizar que sea un número romano canónico correcto (evita IL, VV, IIII, etc.)
     canonical_roman, _ = arabic_to_roman(total)
     if canonical_roman != roman_str:
         raise ValueError(f"'{roman_str}' no es una representación romana válida. La notación correcta para el valor {total} es '<strong>{canonical_roman}</strong>'.")
@@ -149,7 +142,6 @@ def roman_to_arabic(roman_str):
     return total, steps
 
 
-# RUTA PRINCIPAL
 @bp_romanos.route('/romanos', methods=['GET', 'POST'])
 def romanos():
     if request.method == 'GET':
@@ -170,7 +162,7 @@ def romanos():
                 'Número Arábigo': str(num_int),
                 'Número Romano': res_romano
             }
-        else:  # romano_a_arabico
+        else:  
             res_arabico, pasos = roman_to_arabic(input_val)
             resultados = {
                 'Número Romano': input_val.upper(),
