@@ -1,10 +1,12 @@
 # matrices.py
-"""Módulo de resolución de sistemas lineales por Gauss-Jordan.
-Incluye el motor algebraico simbólico compartido con el módulo de vectores.
+"""Módulo de Álgebra Lineal: Matrices.
+Soporta 3 modos de operación:
+1. Gauss-Jordan (Sistemas de ecuaciones Ax = b)
+2. Matriz Inversa (A^-1 vía [A | I] -> [I | A^-1])
+3. Multiplicación de Matrices (A × B)
 """
 import re
 from fractions import Fraction
-
 from flask import Blueprint, render_template, request
 
 bp_matrices = Blueprint('matrices', __name__)
@@ -150,7 +152,7 @@ class AlgebraicExpression:
         return self.to_latex()
 
 
-# 2. UTILIDADES
+# 2. UTILIDADES, CÁLCULO DE LÍMITES Y FORMATO LATEX
 
 def parse_expression(value_str):
     return AlgebraicExpression.parse(value_str)
@@ -162,8 +164,74 @@ def format_value(value):
     return str(value)
 
 
-def format_matrix(matrix):
-    return [[format_value(v) for v in row] for row in matrix]
+def multiply_matrices(matrix_a, matrix_b):
+    """Multiplica dos matrices 2D compuestas por AlgebraicExpression o numéricas."""
+    rows_a, cols_a = len(matrix_a), len(matrix_a[0])
+    rows_b, cols_b = len(matrix_b), len(matrix_b[0])
+    if cols_a != rows_b:
+        raise ValueError(f"No se pueden multiplicar matrices de {rows_a}x{cols_a} y {rows_b}x{cols_b}.")
+    
+    result = []
+    for i in range(rows_a):
+        row_res = []
+        for j in range(cols_b):
+            acc = AlgebraicExpression()
+            for k in range(cols_a):
+                val_a = matrix_a[i][k]
+                val_b = matrix_b[k][j]
+                if not isinstance(val_a, AlgebraicExpression):
+                    val_a = AlgebraicExpression.parse(str(val_a))
+                if not isinstance(val_b, AlgebraicExpression):
+                    val_b = AlgebraicExpression.parse(str(val_b))
+                acc = acc + (val_a * val_b)
+            row_res.append(acc)
+        result.append(row_res)
+    return result
+
+
+def get_system_matrix_limit():
+    """Calcula la memoria disponible del sistema y estima la dimensión máxima N x N soportada."""
+    try:
+        import psutil
+        mem = psutil.virtual_memory()
+        ram_disponible_mb = mem.available / (1024 * 1024)
+        ram_total_gb = mem.total / (1024 ** 3)
+        # Estimación: Cada elemento de AlgebraicExpression en Python consume ~1 KB de memoria RAM
+        max_elementos = int(mem.available / 1024)
+        max_dim = int(max_elementos ** 0.5)
+        return {
+            'ram_total_gb': f"{ram_total_gb:.2f} GB",
+            'ram_disponible_mb': f"{ram_disponible_mb:.0f} MB",
+            'max_dim': f"{max_dim} × {max_dim}",
+            'max_elementos': f"{max_elementos:,}"
+        }
+    except Exception:
+        return {
+            'ram_total_gb': "No detectada",
+            'ram_disponible_mb': "No detectada",
+            'max_dim': "Estimado ~3,000 × 3,000",
+            'max_elementos': "Estimado ~9,000,000"
+        }
+
+
+def matrix_to_latex(matrix, augmented_col=None):
+    """Convierte una matriz 2D a formato KaTeX. Soporta división vertical para matrices aumentadas."""
+    if not matrix:
+        return None
+    rows = []
+    if augmented_col is not None and augmented_col > 0:
+        num_cols = len(matrix[0])
+        left_cols = num_cols - augmented_col
+        col_spec = "c" * left_cols + "|" + "c" * augmented_col
+        for row in matrix:
+            row_str = " & ".join(x.to_latex() if hasattr(x, 'to_latex') else str(x) for x in row)
+            rows.append(row_str)
+        return "\\left[\\begin{array}{" + col_spec + "} " + " \\\\ ".join(rows) + " \\end{array}\\right]"
+    else:
+        for row in matrix:
+            row_str = " & ".join(x.to_latex() if hasattr(x, 'to_latex') else str(x) for x in row)
+            rows.append(row_str)
+        return "\\begin{bmatrix} " + " \\\\ ".join(rows) + " \\end{bmatrix}"
 
 
 def extract_coefficient_and_variable(value_str):
@@ -184,19 +252,14 @@ def extract_coefficient_and_variable(value_str):
     return sign + value_str, ""
 
 
-# 3. GAUSS-JORDAN CON PASO A PASO DETALLADO
-
 def _matrix_copy(matrix):
     return [row[:] for row in matrix]
 
 
+# 3. ALGORITMOS CON PASOS EN LATEX
+
 def gauss_jordan_with_steps(augmented, num_vars):
-    """
-    augmented: matriz aumentada [A|b] de AlgebraicExpression
-    num_vars: número de variables (columnas antes de b)
-    Retorna: (steps_list, status, solution_dict, pivot_cols, free_cols)
-      status: 'unique' | 'infinite' | 'inconsistent'
-    """
+    """Resolución de Ax = b por Gauss-Jordan paso a paso."""
     m = len(augmented)
     n = num_vars
     aug = _matrix_copy(augmented)
@@ -207,25 +270,23 @@ def gauss_jordan_with_steps(augmented, num_vars):
         steps.append({
             'title': f'Paso {step_num[0]}: {title}',
             'desc': desc,
-            'matrix': _matrix_copy(matrix) if matrix is not None else None
+            'matrix': matrix_to_latex(matrix, augmented_col=1) if matrix is not None else None
         })
         step_num[0] += 1
 
     add_step(
         "Matriz aumentada [A|b]",
-        "Se escribe el sistema como matriz aumentada. Las primeras columnas corresponden a los coeficientes de las variables; la última columna es el vector <em>b</em>.",
+        "Se escribe el sistema como matriz aumentada. Las primeras columnas corresponden a los coeficientes de las variables y la última al vector de términos independientes.",
         aug
     )
 
     pivot_positions = []
     pivot_row = 0
 
-    # ---------- ELIMINACIÓN HACIA ADELANTE ----------
     for col in range(n):
         if pivot_row >= m:
             break
 
-        # Buscar pivote en esta columna
         pivot_candidate = None
         for i in range(pivot_row, m):
             if not aug[i][col].is_zero():
@@ -233,9 +294,8 @@ def gauss_jordan_with_steps(augmented, num_vars):
                 break
 
         if pivot_candidate is None:
-            continue  # columna sin pivote -> variable libre (potencial)
+            continue
 
-        # Intercambio si es necesario
         if pivot_candidate != pivot_row:
             aug[pivot_row], aug[pivot_candidate] = aug[pivot_candidate], aug[pivot_row]
             add_step(
@@ -244,7 +304,6 @@ def gauss_jordan_with_steps(augmented, num_vars):
                 aug
             )
 
-        # Escalar pivote a 1
         pivot_val = aug[pivot_row][col]
         if not (pivot_val == AlgebraicExpression.parse("1")):
             aug[pivot_row] = [x / pivot_val for x in aug[pivot_row]]
@@ -256,14 +315,13 @@ def gauss_jordan_with_steps(augmented, num_vars):
 
         pivot_positions.append((pivot_row, col))
 
-        # Eliminar debajo del pivote
         for i in range(pivot_row + 1, m):
             factor = aug[i][col]
             if not factor.is_zero():
                 aug[i] = [aug[i][j] - factor * aug[pivot_row][j] for j in range(n + 1)]
                 add_step(
                     "Eliminar debajo del pivote",
-                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pivot_row+1}</sub> para crear un cero debajo del pivote.",
+                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pivot_row+1}</sub> para hacer cero el elemento inferior.",
                     aug
                 )
 
@@ -271,21 +329,19 @@ def gauss_jordan_with_steps(augmented, num_vars):
 
     add_step(
         "Forma Escalonada por Filas",
-        "La matriz alcanza la forma escalonada. Observe el patrón de escalera que forman los pivotes.",
+        "La matriz alcanza la forma escalonada por filas.",
         aug
     )
 
-    # ---------- VERIFICAR CONSISTENCIA ----------
     for i in range(m):
         if all(aug[i][j].is_zero() for j in range(n)) and not aug[i][n].is_zero():
             add_step(
                 "Sistema Inconsistente",
-                "Aparece una fila del tipo [0 0 … 0 | b] con b ≠ 0. Por el <strong>teorema de existencia y unicidad</strong>, el sistema NO tiene solución.",
+                "Aparece una fila del tipo [0 … 0 | b] con b ≠ 0. El sistema NO tiene solución.",
                 aug
             )
             return steps, 'inconsistent', None, [], []
 
-    # ---------- ELIMINACIÓN HACIA ATRÁS (RREF) ----------
     for k in range(len(pivot_positions) - 1, -1, -1):
         pr, pc = pivot_positions[k]
         for i in range(pr):
@@ -294,164 +350,334 @@ def gauss_jordan_with_steps(augmented, num_vars):
                 aug[i] = [aug[i][j] - factor * aug[pr][j] for j in range(n + 1)]
                 add_step(
                     "Eliminar arriba del pivote",
-                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pr+1}</sub> para crear un cero arriba del pivote.",
+                    f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pr+1}</sub> para hacer cero el elemento superior.",
                     aug
                 )
 
     add_step(
         "Forma Escalonada Reducida (RREF)",
-        "Cada pivote es 1 y es el único elemento no nulo en su columna. Esta forma permite leer directamente las variables básicas en términos de las libres.",
+        "Cada pivote es 1 y es el único elemento no nulo en su columna.",
         aug
     )
 
-    # ---------- CLASIFICAR VARIABLES ----------
     pivot_cols = [pc for _, pc in pivot_positions]
     free_cols = [c for c in range(n) if c not in pivot_cols]
 
     if not free_cols:
-        # Solución única
-        solution = {}
-        for pr, pc in pivot_positions:
-            solution[pc] = aug[pr][n]
-        add_step(
-            "Solución Única",
-            "No existen variables libres. Por el <strong>teorema de existencia y unicidad</strong>, el sistema tiene solución única.",
-            None
-        )
+        solution = {pc: aug[pr][n] for pr, pc in pivot_positions}
+        add_step("Solución Única", "No existen variables libres. El sistema posee solución única.", None)
         return steps, 'unique', solution, pivot_cols, free_cols
 
-    # Infinitas soluciones: expresar variables básicas en términos de las libres
     solution = {}
     for pr, pc in pivot_positions:
         expr = aug[pr][n]
         for fc in free_cols:
             coef = aug[pr][fc]
             if not coef.is_zero():
-                expr = expr + AlgebraicExpression({f"x{fc+1}": -coef})
+                expr = expr - coef * AlgebraicExpression({f"x{fc+1}": 1})
         solution[pc] = expr
 
     free_names = ", ".join(f"x<sub>{c+1}</sub>" for c in free_cols)
     add_step(
         "Infinitas Soluciones",
-        f"Existen {len(free_cols)} variable(s) libre(s): {free_names}. Por el <strong>teorema de existencia y unicidad</strong>, el sistema tiene infinitas soluciones (una por cada asignación de valores a las variables libres).",
+        f"Existen {len(free_cols)} variable(s) libre(s): {free_names}. El sistema posee infinitas soluciones.",
         None
     )
     return steps, 'infinite', solution, pivot_cols, free_cols
 
 
-# 4. OPERACIONES MATRICIALES (reutilizadas por vectores.py)
+def inverse_with_steps(matrix_a):
+    """Cálculo de A^-1 por reducción Gauss-Jordan [A | I] -> [I | A^-1]. Evaluando Invertibilidad."""
+    n = len(matrix_a)
+    if any(len(row) != n for row in matrix_a):
+        raise ValueError("La matriz debe ser cuadrada (n x n) para calcular su inversa.")
 
-def multiply_matrices(matrix_a, matrix_b):
+    aug = []
+    for i in range(n):
+        identity_row = [AlgebraicExpression.parse("1" if i == j else "0") for j in range(n)]
+        aug.append(matrix_a[i] + identity_row)
+
+    steps = []
+    step_num = [1]
+
+    def add_step(title, desc, matrix):
+        steps.append({
+            'title': f'Paso {step_num[0]}: {title}',
+            'desc': desc,
+            'matrix': matrix_to_latex(matrix, augmented_col=n) if matrix is not None else None
+        })
+        step_num[0] += 1
+
+    add_step(
+        "Matriz Aumentada [A | I]",
+        "Se adjunta la matriz identidad <em>I<sub>n</sub></em> a la derecha de la matriz <em>A</em> para iniciar la reducción.",
+        aug
+    )
+
+    pivot_row = 0
+    for col in range(n):
+        pivot_candidate = None
+        for i in range(pivot_row, n):
+            if not aug[i][col].is_zero():
+                pivot_candidate = i
+                break
+
+        if pivot_candidate is None:
+            add_step(
+                "Matriz Singular (NO es Invertible)",
+                f"No se encontró un pivote no nulo en la columna {col+1}. La matriz <strong>NO ES INVERTIBLE</strong> (su determinante es 0).",
+                aug
+            )
+            return steps, False, None
+
+        if pivot_candidate != pivot_row:
+            aug[pivot_row], aug[pivot_candidate] = aug[pivot_candidate], aug[pivot_row]
+            add_step(
+                "Intercambio de filas",
+                f"F<sub>{pivot_row+1}</sub> ↔ F<sub>{pivot_candidate+1}</sub> para posicionar un pivote.",
+                aug
+            )
+
+        pivot_val = aug[pivot_row][col]
+        if not (pivot_val == AlgebraicExpression.parse("1")):
+            aug[pivot_row] = [x / pivot_val for x in aug[pivot_row]]
+            add_step(
+                "Escalar fila pivote",
+                f"F<sub>{pivot_row+1}</sub> = F<sub>{pivot_row+1}</sub> ÷ ({pivot_val.to_latex()}) para obtener pivote 1.",
+                aug
+            )
+
+        for i in range(n):
+            if i != pivot_row:
+                factor = aug[i][col]
+                if not factor.is_zero():
+                    aug[i] = [aug[i][j] - factor * aug[pivot_row][j] for j in range(2 * n)]
+                    add_step(
+                        f"Eliminar en columna {col+1}",
+                        f"F<sub>{i+1}</sub> = F<sub>{i+1}</sub> − ({factor.to_latex()})·F<sub>{pivot_row+1}</sub> para hacer cero el elemento ({i+1}, {col+1}).",
+                        aug
+                    )
+
+        pivot_row += 1
+
+    inv_matrix = [aug[i][n:] for i in range(n)]
+
+    add_step(
+        "Forma Final [I | A⁻¹]",
+        "El bloque izquierdo se redujo exitosamente a <em>I<sub>n</sub></em>. Por lo tanto, la matriz <strong>ES INVERTIBLE</strong> y el bloque derecho corresponde a su matriz inversa A<sup>-1</sup>.",
+        aug
+    )
+
+    return steps, True, inv_matrix
+
+
+def matrix_multiplication_with_steps(matrix_a, matrix_b):
+    """Multiplicación de matrices C = A x B paso a paso."""
     rows_a, cols_a = len(matrix_a), len(matrix_a[0])
     rows_b, cols_b = len(matrix_b), len(matrix_b[0])
+
     if cols_a != rows_b:
-        raise ValueError(f"No se pueden multiplicar matrices {rows_a}x{cols_a} y {rows_b}x{cols_b}.")
+        raise ValueError(
+            f"No es posible multiplicar matrices de dimensiones {rows_a}×{cols_a} y {rows_b}×{cols_b}."
+        )
+
+    steps = []
     result = []
+
+    steps.append({
+        'title': 'Análisis de Dimensiones',
+        'desc': f'Matriz A: {rows_a}×{cols_a} | Matriz B: {rows_b}×{cols_b}. El producto C = A × B está definido y tendrá dimensión {rows_a}×{cols_b}.',
+        'matrix': None
+    })
+
     for i in range(rows_a):
-        row = []
+        row_res = []
         for j in range(cols_b):
+            terms_str = []
             acc = AlgebraicExpression()
             for k in range(cols_a):
-                acc = acc + matrix_a[i][k] * matrix_b[k][j]
-            row.append(acc)
-        result.append(row)
-    return result
+                val_a = matrix_a[i][k]
+                val_b = matrix_b[k][j]
+                prod = val_a * val_b
+                acc = acc + prod
+                terms_str.append(f"({val_a.to_latex()}) \\cdot ({val_b.to_latex()})")
+            row_res.append(acc)
+
+            calc_expr = " + ".join(terms_str) + f" = {acc.to_latex()}"
+            steps.append({
+                'title': f'Elemento c_{{{i+1},{j+1}}}',
+                'desc': f'Fila {i+1} de A × Columna {j+1} de B: $$c_{{{i+1},{j+1}}} = {calc_expr}$$',
+                'matrix': None
+            })
+        result.append(row_res)
+
+    steps.append({
+        'title': 'Matriz Resultante C = A × B',
+        'desc': 'Consolidación de todos los elementos calculados:',
+        'matrix': matrix_to_latex(result)
+    })
+
+    return steps, result
 
 
-def rref(matrix_input):
-    """RREF sin grabación de pasos (usado por vectores.py)."""
-    A = _matrix_copy(matrix_input)
-    rows, cols = len(A), len(A[0])
-    r = 0
-    for c in range(cols - 1):
-        if r >= rows:
-            break
-        pivot = r
-        while pivot < rows and A[pivot][c].is_zero():
-            pivot += 1
-        if pivot == rows:
-            continue
-        A[r], A[pivot] = A[pivot], A[r]
-        pv = A[r][c]
-        A[r] = [x / pv for x in A[r]]
-        for i in range(rows):
-            if i != r:
-                f = A[i][c]
-                A[i] = [A[i][j] - f * A[r][j] for j in range(cols)]
-        r += 1
-    return A
-
-
-# 5. RUTA /matrices  (SOLO Gauss-Jordan)
+# 4. RUTA PRINCIPAL DE MATRICES
 
 @bp_matrices.route('/matrices', methods=['GET', 'POST'])
 def matrices():
+    limite = get_system_matrix_limit()
+
     if request.method == 'GET':
-        return render_template('matrices.html')
-
-    num_rows = int(request.form.get('filas', 2))
-    num_cols = int(request.form.get('cols', 2))
-    pasos, resultados, nombres_vars = [], [], []
-    tipo_solucion = None
-
-    try:
-        matrix_a = []
-        vector_b = []
-        variable_names = [f"x_{{{j+1}}}" for j in range(num_cols)]
-
-        for i in range(num_rows):
-            row = []
-            for j in range(num_cols):
-                raw = request.form.get(f'a_{i}_{j}', '0')
-                coef_str, var_str = extract_coefficient_and_variable(raw)
-                row.append(parse_expression(coef_str))
-                if var_str:
-                    m = re.match(r'^([a-zA-Z]+)(\d+)$', var_str)
-                    variable_names[j] = f"{m.group(1)}_{{{m.group(2)}}}" if m else var_str
-            matrix_a.append(row)
-            raw_b = request.form.get(f'b_{i}', '0')
-            b_coef, _ = extract_coefficient_and_variable(raw_b)
-            vector_b.append(parse_expression(b_coef))
-
-        augmented = [matrix_a[i] + [vector_b[i]] for i in range(num_rows)]
-
-        steps_dict, status, solution, pivot_cols, free_cols = gauss_jordan_with_steps(
-            augmented, num_cols
+        return render_template(
+            'matrices.html',
+            modo='gauss',
+            filas=2,
+            cols=2,
+            dim_inv=2,
+            filas_a=2,
+            cols_a=2,
+            filas_b=2,
+            cols_b=2,
+            inputs={},
+            limite_sistema=limite
         )
 
-        # Convertir a formato (título, explicación, matriz) esperado por el template
-        for s in steps_dict:
-            pasos.append((
-                s['title'],
-                s['desc'],
-                format_matrix(s['matrix']) if s['matrix'] is not None else None
-            ))
+    modo = request.form.get('modo', 'gauss')
+    pasos = []
+    resultados = []
+    nombres_vars = []
+    tipo_solucion = None
+    matriz_resultado = None
+    user_inputs = {}
 
-        if status == 'inconsistent':
-            tipo_solucion = 'inconsistente'
-        elif status == 'unique':
-            tipo_solucion = 'unica'
-            for pc in sorted(solution.keys()):
-                nombres_vars.append(variable_names[pc])
-                resultados.append(solution[pc].to_latex())
-        else:  # infinite
-            tipo_solucion = 'infinitas'
-            for pc in sorted(solution.keys()):
-                nombres_vars.append(variable_names[pc])
-                resultados.append(solution[pc].to_latex())
-            for fc in free_cols:
-                nombres_vars.append(variable_names[fc])
-                resultados.append(f"{variable_names[fc]}\\;\\text{{libre}}")
+    filas = int(request.form.get('filas', 2))
+    cols = int(request.form.get('cols', 2))
+    dim_inv = int(request.form.get('dim_inv', 2))
+    filas_a = int(request.form.get('filas_a', 2))
+    cols_a = int(request.form.get('cols_a', 2))
+    filas_b = int(request.form.get('filas_b', 2))
+    cols_b = int(request.form.get('cols_b', 2))
+
+    try:
+        if modo == 'gauss':
+            matrix_a = []
+            vector_b = []
+            variable_names = [f"x_{{{j+1}}}" for j in range(cols)]
+
+            for i in range(filas):
+                row = []
+                for j in range(cols):
+                    key = f'a_{i}_{j}'
+                    raw = request.form.get(key, '0')
+                    user_inputs[key] = raw
+                    coef_str, var_str = extract_coefficient_and_variable(raw)
+                    row.append(parse_expression(coef_str))
+                    if var_str:
+                        m = re.match(r'^([a-zA-Z]+)(\d+)$', var_str)
+                        variable_names[j] = f"{m.group(1)}_{{{m.group(2)}}}" if m else var_str
+                matrix_a.append(row)
+                
+                key_b = f'b_{i}'
+                raw_b = request.form.get(key_b, '0')
+                user_inputs[key_b] = raw_b
+                b_coef, _ = extract_coefficient_and_variable(raw_b)
+                vector_b.append(parse_expression(b_coef))
+
+            augmented = [matrix_a[i] + [vector_b[i]] for i in range(filas)]
+            steps_dict, status, solution, pivot_cols, free_cols = gauss_jordan_with_steps(
+                augmented, cols
+            )
+
+            for s in steps_dict:
+                pasos.append((s['title'], s['desc'], s['matrix']))
+
+            if status == 'inconsistent':
+                tipo_solucion = 'inconsistente'
+            elif status == 'unique':
+                tipo_solucion = 'unica'
+                for pc in sorted(solution.keys()):
+                    nombres_vars.append(variable_names[pc])
+                    resultados.append(solution[pc].to_latex())
+            else:
+                tipo_solucion = 'infinitas'
+                for pc in sorted(solution.keys()):
+                    nombres_vars.append(variable_names[pc])
+                    resultados.append(solution[pc].to_latex())
+                for fc in free_cols:
+                    nombres_vars.append(variable_names[fc])
+                    resultados.append(f"{variable_names[fc]}\\;\\text{{libre}}")
+
+        elif modo == 'inversa':
+            matrix_a = []
+            for i in range(dim_inv):
+                row = []
+                for j in range(dim_inv):
+                    key = f'inv_a_{i}_{j}'
+                    raw = request.form.get(key, '0')
+                    user_inputs[key] = raw
+                    coef_str, _ = extract_coefficient_and_variable(raw)
+                    row.append(parse_expression(coef_str))
+                matrix_a.append(row)
+
+            steps_dict, exists, inv_mat = inverse_with_steps(matrix_a)
+
+            for s in steps_dict:
+                pasos.append((s['title'], s['desc'], s['matrix']))
+
+            if exists:
+                tipo_solucion = 'invertible'
+                matriz_resultado = matrix_to_latex(inv_mat)
+            else:
+                tipo_solucion = 'singular'
+
+        elif modo == 'multiplicacion':
+            matrix_a = []
+            for i in range(filas_a):
+                row = []
+                for j in range(cols_a):
+                    key = f'mult_a_{i}_{j}'
+                    raw = request.form.get(key, '0')
+                    user_inputs[key] = raw
+                    coef_str, _ = extract_coefficient_and_variable(raw)
+                    row.append(parse_expression(coef_str))
+                matrix_a.append(row)
+
+            matrix_b = []
+            for i in range(filas_b):
+                row = []
+                for j in range(cols_b):
+                    key = f'mult_b_{i}_{j}'
+                    raw = request.form.get(key, '0')
+                    user_inputs[key] = raw
+                    coef_str, _ = extract_coefficient_and_variable(raw)
+                    row.append(parse_expression(coef_str))
+                matrix_b.append(row)
+
+            steps_dict, res_mat = matrix_multiplication_with_steps(matrix_a, matrix_b)
+
+            for s in steps_dict:
+                pasos.append((s['title'], s['desc'], s['matrix']))
+
+            tipo_solucion = 'multiplicacion'
+            matriz_resultado = matrix_to_latex(res_mat)
 
     except Exception as e:
-        pasos.append(("Error", f"Sintaxis o cálculo no válido: {str(e)}", None))
+        pasos.append(("Error de Entrada / Cálculo", f"Ocurrió un error al procesar la solicitud: {str(e)}", None))
 
     return render_template(
         'matrices.html',
+        modo=modo,
         pasos=pasos,
         resultados=resultados,
         nombres_vars=nombres_vars,
         tipo_solucion=tipo_solucion,
-        filas=num_rows,
-        cols=num_cols,
+        matriz_resultado=matriz_resultado,
+        filas=filas,
+        cols=cols,
+        dim_inv=dim_inv,
+        filas_a=filas_a,
+        cols_a=cols_a,
+        filas_b=filas_b,
+        cols_b=cols_b,
+        inputs=user_inputs,
+        limite_sistema=limite
     )

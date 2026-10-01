@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Álgebra Lineal - Módulo de Matrices (Gauss-Jordan)</title>
+    <title>Álgebra Lineal - Módulo de Matrices</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
@@ -21,7 +21,9 @@
         #pantalla-carga { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(253, 238, 244, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
         .paso-box { background-color: #fafafa; border-left: 5px solid #ab47bc; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .katex-display { margin: 12px 0; overflow-x: auto; }
-        .badge-tipo { font-size: 1rem; padding: 10px 18px; border-radius: 10px; }
+        .badge-tipo { font-size: 1.1rem; padding: 12px 20px; border-radius: 10px; }
+        .nav-pills .nav-link.active { background-color: #9c27b0; font-weight: bold; }
+        .nav-pills .nav-link { color: #6a1b9a; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -31,7 +33,7 @@
 
 <div id="pantalla-carga">
     <img src="{{ url_for('static', filename='conejitojapi.gif') }}" width="220" alt="Procesando">
-    <h2 style="color: #9c27b0; font-weight: bold; margin-top: 20px;">Procesando eliminación Gauss-Jordan...</h2>
+    <h2 style="color: #9c27b0; font-weight: bold; margin-top: 20px;">Calculando procedimiento...</h2>
 </div>
 
 <div class="container mt-4 mb-5" style="max-width: 950px;">
@@ -42,32 +44,128 @@
             <img src="{{ url_for('static', filename='conejito1.png') }}" width="100" class="img-decorativa" alt="Ilustración 1">
             <div>
                 <h1 style="margin-bottom: 10px;">🎩 ✨ 🪄</h1>
-                <h1 style="color: #6a1b9a; font-weight: bold; margin: 0;">Módulo de Matrices — Gauss-Jordan</h1>
+                <h1 style="color: #6a1b9a; font-weight: bold; margin: 0;">Módulo de Matrices</h1>
             </div>
             <img src="{{ url_for('static', filename='conejito2.png') }}" width="100" class="img-decorativa" alt="Ilustración 2">
         </div>
-        <p class="text-secondary fw-bold mt-2">Resuelve sistemas lineales Ax = b mostrando paso a paso la reducción por filas</p>
+        <p class="text-secondary fw-bold mt-2">Selecciona un procedimiento algebraico para resolver paso a paso</p>
     </div>
 
+    <!-- BANNER DE CAPACIDAD DE LA COMPUTADORA -->
+    {% if limite_sistema %}
+    <div class="alert border-0 shadow-sm text-center my-3 py-2" style="border-radius: 12px; background-color: #f3e5f5; color: #4a148c;">
+        <small class="fw-bold">
+            💻 <strong>Capacidad del Sistema:</strong> RAM disponible: {{ limite_sistema.ram_disponible_mb }} / {{ limite_sistema.ram_total_gb }} | 
+            <strong>Límite estimado de matriz soportada:</strong> {{ limite_sistema.max_dim }} ({{ limite_sistema.max_elementos }} celdas)
+        </small>
+    </div>
+    {% endif %}
+
+    <!-- Pestañas de Selección de Modo -->
+    <ul class="nav nav-pills nav-justified my-4" id="pills-tab" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link {{ 'active' if modo == 'gauss' else '' }}" onclick="cambiarModo('gauss')">1. Gauss-Jordan ($Ax = b$)</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link {{ 'active' if modo == 'inversa' else '' }}" onclick="cambiarModo('inversa')">2. Matriz Inversa ($A^{-1}$)</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link {{ 'active' if modo == 'multiplicacion' else '' }}" onclick="cambiarModo('multiplicacion')">3. Multiplicación ($A \times B$)</button>
+        </li>
+    </ul>
+
     <div class="card-module">
-        <form method="POST" id="form-magia">
-            <div class="row g-3 mb-4">
-                <div class="col-md-6">
-                    <label class="fw-bold text-secondary">Número de ecuaciones (filas m):</label>
-                    <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGrid()">
+        <form method="POST" id="form-matrices">
+            <input type="hidden" name="modo" id="modo-input" value="{{ modo or 'gauss' }}">
+
+            <!-- PANEL 1: GAUSS-JORDAN -->
+            <div id="panel-gauss" style="display: none;">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Ecuaciones (filas m):</label>
+                        <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 2 }}" min="2" max="5" onchange="generarGridGauss()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="fw-bold text-secondary">Variables (columnas n):</label>
+                        <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGridGauss()">
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label class="fw-bold text-secondary">Número de variables (columnas n):</label>
-                    <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="2" max="5" onchange="generarGrid()">
+                <div id="grid-gauss" class="mb-4"></div>
+            </div>
+
+            <!-- PANEL 2: MATRIZ INVERSA -->
+            <div id="panel-inversa" style="display: none;">
+                <div class="mb-4">
+                    <label class="fw-bold text-secondary">Dimensión de la matriz cuadrada ($n \times n$):</label>
+                    <input type="number" name="dim_inv" id="dim_inv" class="form-control" value="{{ dim_inv or 2 }}" min="2" max="5" onchange="generarGridInversa()">
+                </div>
+                <div id="grid-inversa" class="mb-4"></div>
+            </div>
+
+            <!-- PANEL 3: MULTIPLICACIÓN -->
+            <div id="panel-multiplicacion" style="display: none;">
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label class="fw-bold text-secondary">Filas de A ($m_A$):</label>
+                        <input type="number" name="filas_a" id="filas_a" class="form-control" value="{{ filas_a or 2 }}" min="1" max="5" onchange="actualizarDimensionesMult()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="fw-bold text-secondary">Cols de A ($n_A$):</label>
+                        <input type="number" name="cols_a" id="cols_a" class="form-control" value="{{ cols_a or 2 }}" min="1" max="5" onchange="actualizarDimensionesMult()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="fw-bold text-secondary">Filas de B ($m_B$):</label>
+                        <input type="number" name="filas_b" id="filas_b" class="form-control" value="{{ filas_b or 2 }}" min="1" max="5" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="fw-bold text-secondary">Cols de B ($n_B$):</label>
+                        <input type="number" name="cols_b" id="cols_b" class="form-control" value="{{ cols_b or 2 }}" min="1" max="5" onchange="actualizarDimensionesMult()">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 text-center">
+                        <h5 class="fw-bold text-purple mb-3">Matriz A</h5>
+                        <div id="grid-mult-a" class="mb-3"></div>
+                    </div>
+                    <div class="col-md-6 text-center">
+                        <h5 class="fw-bold text-purple mb-3">Matriz B</h5>
+                        <div id="grid-mult-b" class="mb-3"></div>
+                    </div>
                 </div>
             </div>
 
-            <div id="grid-container" class="mb-4"></div>
-
-            <button type="submit" class="btn btn-module fs-5 py-2">Resolver sistema</button>
+            <button type="submit" class="btn btn-module fs-5 py-2">Calcular procedimiento</button>
         </form>
     </div>
 
+    <!-- BADGES Y DECLARACIÓN DE INVERTIBILIDAD -->
+    {% if tipo_solucion %}
+        <div class="text-center mt-4">
+            {% if tipo_solucion == 'unica' %}
+                <span class="badge bg-success badge-tipo">✔ Solución Única</span>
+            {% elif tipo_solucion == 'infinitas' %}
+                <span class="badge bg-warning text-dark badge-tipo">∞ Infinitas Soluciones</span>
+            {% elif tipo_solucion == 'inconsistente' %}
+                <span class="badge bg-danger badge-tipo">✘ Sistema Inconsistente (Sin Solución)</span>
+            {% elif tipo_solucion == 'invertible' %}
+                <span class="badge bg-success badge-tipo">✔ La Matriz ES INVERTIBLE (Matriz No Singular)</span>
+            {% elif tipo_solucion == 'singular' %}
+                <span class="badge bg-danger badge-tipo">✘ La Matriz NO ES INVERTIBLE (Matriz Singular)</span>
+            {% elif tipo_solucion == 'multiplicacion' %}
+                <span class="badge bg-primary badge-tipo">✔ Producto de Matrices Calculado</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- ALERTA CUANDO LA MATRIZ ES SINGULAR (NO INVERTIBLE) -->
+    {% if tipo_solucion == 'singular' %}
+        <div class="alert alert-danger text-center mt-4 p-4 shadow-sm" style="border-radius: 15px;">
+            <h4 class="fw-bold mb-2">🚫 La Matriz No Tiene Inversa ($A^{-1}$ No Existe)</h4>
+            <p class="mb-0 fs-6">Durante la reducción Gauss-Jordan no fue posible obtener pivotes en todas las columnas. La matriz es <strong>singular</strong> debido a que sus filas son linealmente dependientes (su determinante es $0$).</p>
+        </div>
+    {% endif %}
+
+    <!-- PASOS DEL PROCEDIMIENTO -->
     {% if pasos %}
         <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
             <div class="d-flex align-items-center mb-3 gap-3">
@@ -81,12 +179,7 @@
                     <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
                     {% if matriz %}
                         <div class="fs-5 text-center text-dark">
-                            $$ \begin{bmatrix}
-                            {% for fila in matriz %}
-                                {% for val in fila %} {{ val }} {% if not loop.last %} & {% endif %} {% endfor %}
-                                {% if not loop.last %} \\ {% endif %}
-                            {% endfor %}
-                            \end{bmatrix} $$
+                            $${{ matriz }}$$
                         </div>
                     {% endif %}
                 </div>
@@ -94,27 +187,33 @@
         </div>
     {% endif %}
 
-    {% if tipo_solucion %}
-        <div class="text-center mt-4">
-            {% if tipo_solucion == 'unica' %}
-                <span class="badge bg-success badge-tipo">✔ Solución única</span>
-            {% elif tipo_solucion == 'infinitas' %}
-                <span class="badge bg-warning text-dark badge-tipo">∞ Infinitas soluciones</span>
-            {% elif tipo_solucion == 'inconsistente' %}
-                <span class="badge bg-danger badge-tipo">✘ Sistema inconsistente (sin solución)</span>
-            {% endif %}
+    <!-- MOSTRAR MATRIZ RESULTADO (INVERSA O MULTIPLICACIÓN) -->
+    {% if matriz_resultado %}
+        <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
+            <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
+            <h2 style="color: #8e24aa; font-weight: bold;">
+                {% if tipo_solucion == 'invertible' %}
+                    Matriz Inversa Resultante $A^{-1}$
+                {% else %}
+                    Matriz Resultante $C = A \times B$
+                {% endif %}
+            </h2>
+            <div class="fs-3 mt-3">
+                $${{ matriz_resultado }}$$
+            </div>
         </div>
     {% endif %}
 
+    <!-- RESULTADOS VECTOR DE SOLUCIÓN GAUSS-JORDAN -->
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
             <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
-            <h2 style="color: #8e24aa; font-weight: bold;">Solución general</h2>
+            <h2 style="color: #8e24aa; font-weight: bold;">Solución General</h2>
             <div class="row mt-3 justify-content-center">
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
                         <div class="p-3 fs-4 rounded-3" style="background-color: #f3e5f5; border: 2px solid #ce93d8;">
-                            $ {{ nombres_vars[i] }} = {{ resultados[i] }} $
+                            ${{ nombres_vars[i] }} = {{ resultados[i] }}$
                         </div>
                     </div>
                 {% endfor %}
@@ -124,9 +223,8 @@
 </div>
 
 <script>
-    const numFilas = document.getElementById('filas');
-    const numCols = document.getElementById('cols');
-    const gridContainer = document.getElementById('grid-container');
+    // Objeto con entradas enviadas previamente desde el backend
+    const savedInputs = JSON.parse('{{ (inputs or {}) | tojson | safe }}');
 
     function crearInput(nombre, claseExtra) {
         const input = document.createElement('input');
@@ -134,14 +232,27 @@
         input.name = nombre;
         input.className = claseExtra;
         input.required = true;
-        input.value = "0";
+        input.value = savedInputs[nombre] !== undefined ? savedInputs[nombre] : "0";
         return input;
     }
 
-    function generarGrid() {
-        gridContainer.innerHTML = "";
-        const filas = parseInt(numFilas.value) || 2;
-        const cols = parseInt(numCols.value) || 2;
+    function cambiarModo(nuevoModo) {
+        document.getElementById('modo-input').value = nuevoModo;
+        document.getElementById('panel-gauss').style.display = nuevoModo === 'gauss' ? 'block' : 'none';
+        document.getElementById('panel-inversa').style.display = nuevoModo === 'inversa' ? 'block' : 'none';
+        document.getElementById('panel-multiplicacion').style.display = nuevoModo === 'multiplicacion' ? 'block' : 'none';
+        
+        const tabs = document.querySelectorAll('#pills-tab .nav-link');
+        tabs[0].classList.toggle('active', nuevoModo === 'gauss');
+        tabs[1].classList.toggle('active', nuevoModo === 'inversa');
+        tabs[2].classList.toggle('active', nuevoModo === 'multiplicacion');
+    }
+
+    function generarGridGauss() {
+        const container = document.getElementById('grid-gauss');
+        container.innerHTML = "";
+        const filas = parseInt(document.getElementById('filas').value) || 2;
+        const cols = parseInt(document.getElementById('cols').value) || 2;
         for (let i = 0; i < filas; i++) {
             const rowDiv = document.createElement('div');
             rowDiv.className = 'grid-row';
@@ -154,15 +265,69 @@
             sep.className = 'fw-bold text-secondary mx-2 align-self-center fs-4';
             rowDiv.appendChild(sep);
             rowDiv.appendChild(resInput);
-            gridContainer.appendChild(rowDiv);
+            container.appendChild(rowDiv);
         }
     }
 
-    document.getElementById('form-magia').addEventListener('submit', function() {
+    function generarGridInversa() {
+        const container = document.getElementById('grid-inversa');
+        container.innerHTML = "";
+        const dim = parseInt(document.getElementById('dim_inv').value) || 2;
+        for (let i = 0; i < dim; i++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'grid-row';
+            for (let j = 0; j < dim; j++) {
+                rowDiv.appendChild(crearInput(`inv_a_${i}_${j}`, 'inv-val'));
+            }
+            container.appendChild(rowDiv);
+        }
+    }
+
+    function actualizarDimensionesMult() {
+        const colsA = parseInt(document.getElementById('cols_a').value) || 2;
+        document.getElementById('filas_b').value = colsA;
+        generarGridMult();
+    }
+
+    function generarGridMult() {
+        const containerA = document.getElementById('grid-mult-a');
+        const containerB = document.getElementById('grid-mult-b');
+        containerA.innerHTML = "";
+        containerB.innerHTML = "";
+
+        const filasA = parseInt(document.getElementById('filas_a').value) || 2;
+        const colsA = parseInt(document.getElementById('cols_a').value) || 2;
+        const filasB = colsA;
+        const colsB = parseInt(document.getElementById('cols_b').value) || 2;
+
+        for (let i = 0; i < filasA; i++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'grid-row';
+            for (let j = 0; j < colsA; j++) {
+                rowDiv.appendChild(crearInput(`mult_a_${i}_${j}`, 'mult-val'));
+            }
+            containerA.appendChild(rowDiv);
+        }
+
+        for (let i = 0; i < filasB; i++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'grid-row';
+            for (let j = 0; j < colsB; j++) {
+                rowDiv.appendChild(crearInput(`mult_b_${i}_${j}`, 'mult-val'));
+            }
+            containerB.appendChild(rowDiv);
+        }
+    }
+
+    document.getElementById('form-matrices').addEventListener('submit', function() {
         document.getElementById('pantalla-carga').style.display = 'flex';
     });
 
-    generarGrid();
+    // Inicializar vistas al cargar
+    cambiarModo("{{ modo or 'gauss' }}");
+    generarGridGauss();
+    generarGridInversa();
+    actualizarDimensionesMult();
 </script>
 </body>
-</html> 
+</html>
