@@ -23,7 +23,16 @@
         .katex-display { margin: 12px 0; overflow-x: auto; }
         .badge-tipo { font-size: 1.1rem; padding: 12px 20px; border-radius: 10px; }
         .nav-pills .nav-link.active { background-color: #9c27b0; font-weight: bold; }
-        .nav-pills .nav-link { color: #6a1b9a; font-weight: bold; }
+        .nav-pills .nav-link { color: #6a1b9a; font-weight: bold; font-size: 0.9rem; }
+        .teorema-item { padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; border-left: 4px solid #ccc; background-color: #fafafa; }
+        .teorema-item.cumple { border-left-color: #4caf50; background-color: #f1f8e9; }
+        .teorema-item.no-cumple { border-left-color: #f44336; background-color: #ffebee; }
+        .teorema-letra { display: inline-block; min-width: 28px; font-weight: bold; color: #6a1b9a; }
+        .badge-cumple { font-size: 0.85rem; }
+        .det-box { background: linear-gradient(135deg, #f3e5f5, #e1bee7); border: 2px solid #ba68c8; border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 20px; }
+        .prop-item { padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; border-left: 4px solid #9c27b0; background-color: #fafafa; }
+        .prop-item.cumple { border-left-color: #4caf50; background-color: #f1f8e9; }
+        .prop-item.info { border-left-color: #2196f3; background-color: #e3f2fd; }
     </style>
 </head>
 <body>
@@ -36,7 +45,7 @@
     <h2 style="color: #9c27b0; font-weight: bold; margin-top: 20px;">Calculando procedimiento...</h2>
 </div>
 
-<div class="container mt-4 mb-5" style="max-width: 950px;">
+<div class="container mt-4 mb-5" style="max-width: 1000px;">
     <a href="/" class="btn btn-outline-secondary mb-3 fw-bold">Volver al Menú Principal</a>
 
     <div class="text-center">
@@ -51,26 +60,19 @@
         <p class="text-secondary fw-bold mt-2">Selecciona un procedimiento algebraico para resolver paso a paso</p>
     </div>
 
-    <!-- BANNER DE CAPACIDAD DE LA COMPUTADORA -->
-    {% if limite_sistema %}
-    <div class="alert border-0 shadow-sm text-center my-3 py-2" style="border-radius: 12px; background-color: #f3e5f5; color: #4a148c;">
-        <small class="fw-bold">
-            💻 <strong>Capacidad del Sistema:</strong> RAM disponible: {{ limite_sistema.ram_disponible_mb }} / {{ limite_sistema.ram_total_gb }} | 
-            <strong>Límite estimado de matriz soportada:</strong> {{ limite_sistema.max_dim }} ({{ limite_sistema.max_elementos }} celdas)
-        </small>
-    </div>
-    {% endif %}
-
     <!-- Pestañas de Selección de Modo -->
     <ul class="nav nav-pills nav-justified my-4" id="pills-tab" role="tablist">
         <li class="nav-item">
-            <button class="nav-link {{ 'active' if modo == 'gauss' else '' }}" onclick="cambiarModo('gauss')">1. Gauss-Jordan ($Ax = b$)</button>
+            <button type="button" class="nav-link {{ 'active' if modo == 'gauss' else '' }}" onclick="cambiarModo('gauss')">1. Gauss-Jordan</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link {{ 'active' if modo == 'inversa' else '' }}" onclick="cambiarModo('inversa')">2. Matriz Inversa ($A^{-1}$)</button>
+            <button type="button" class="nav-link {{ 'active' if modo == 'inversa' else '' }}" onclick="cambiarModo('inversa')">2. Inversa $A^{-1}$</button>
         </li>
         <li class="nav-item">
-            <button class="nav-link {{ 'active' if modo == 'multiplicacion' else '' }}" onclick="cambiarModo('multiplicacion')">3. Multiplicación ($A \times B$)</button>
+            <button type="button" class="nav-link {{ 'active' if modo == 'multiplicacion' else '' }}" onclick="cambiarModo('multiplicacion')">3. Multiplicación</button>
+        </li>
+        <li class="nav-item">
+            <button type="button" class="nav-link {{ 'active' if modo == 'resolver_inversa' else '' }}" onclick="cambiarModo('resolver_inversa')">4. Resolver $Ax=b$ con $A^{-1}$</button>
         </li>
     </ul>
 
@@ -100,6 +102,9 @@
                     <input type="number" name="dim_inv" id="dim_inv" class="form-control" value="{{ dim_inv or 2 }}" min="2" max="5" onchange="generarGridInversa()">
                 </div>
                 <div id="grid-inversa" class="mb-4"></div>
+                <div class="alert alert-info py-2 mb-0" style="border-radius: 10px;">
+                    <small>💡 Se mostrará el determinante, la verificación $A \cdot A^{-1} = I$, el <strong>Teorema de la Matriz Invertible</strong> y las propiedades de la inversa.</small>
+                </div>
             </div>
 
             <!-- PANEL 3: MULTIPLICACIÓN -->
@@ -134,7 +139,28 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-module fs-5 py-2">Calcular procedimiento</button>
+            <!-- PANEL 4: RESOLVER Ax = b con A^-1 -->
+            <div id="panel-resolver-inversa" style="display: none;">
+                <div class="mb-4">
+                    <label class="fw-bold text-secondary">Dimensión del sistema ($n \times n$):</label>
+                    <input type="number" name="dim_solve" id="dim_solve" class="form-control" value="{{ dim_solve or 2 }}" min="2" max="5" onchange="generarGridSolve()">
+                </div>
+                <div class="row">
+                    <div class="col-md-7">
+                        <h5 class="fw-bold text-purple mb-3 text-center">Matriz A</h5>
+                        <div id="grid-solve-a" class="mb-3"></div>
+                    </div>
+                    <div class="col-md-5">
+                        <h5 class="fw-bold text-purple mb-3 text-center">Vector b</h5>
+                        <div id="grid-solve-b" class="mb-3"></div>
+                    </div>
+                </div>
+                <div class="alert alert-info py-2 mb-0" style="border-radius: 10px;">
+                    <small>💡 Se calculará $x = A^{-1} \cdot b$. Si $A$ no es invertible, deberá usar Gauss-Jordan.</small>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-module fs-5 py-2 mt-3">Calcular procedimiento</button>
         </form>
     </div>
 
@@ -148,20 +174,35 @@
             {% elif tipo_solucion == 'inconsistente' %}
                 <span class="badge bg-danger badge-tipo">✘ Sistema Inconsistente (Sin Solución)</span>
             {% elif tipo_solucion == 'invertible' %}
-                <span class="badge bg-success badge-tipo">✔ La Matriz ES INVERTIBLE (Matriz No Singular)</span>
+                <span class="badge bg-success badge-tipo">✔ La Matriz ES INVERTIBLE (No Singular)</span>
             {% elif tipo_solucion == 'singular' %}
-                <span class="badge bg-danger badge-tipo">✘ La Matriz NO ES INVERTIBLE (Matriz Singular)</span>
+                <span class="badge bg-danger badge-tipo">✘ La Matriz NO ES INVERTIBLE (Singular)</span>
             {% elif tipo_solucion == 'multiplicacion' %}
                 <span class="badge bg-primary badge-tipo">✔ Producto de Matrices Calculado</span>
+            {% elif tipo_solucion == 'solve_inversa' %}
+                <span class="badge bg-success badge-tipo">✔ Sistema Resuelto con $x = A^{-1} b$</span>
             {% endif %}
         </div>
     {% endif %}
 
-    <!-- ALERTA CUANDO LA MATRIZ ES SINGULAR (NO INVERTIBLE) -->
+    <!-- DETERMINANTE -->
+    {% if determinante is not none %}
+        <div class="det-box mt-4">
+            <h5 class="fw-bold mb-1" style="color: #6a1b9a;">🧮 Determinante de A</h5>
+            <div class="fs-3">$\det(A) = {{ determinante }}$</div>
+            {% if tipo_solucion == 'invertible' %}
+                <small class="text-success fw-bold">Como $\det(A) \neq 0$, la matriz es invertible.</small>
+            {% elif tipo_solucion == 'singular' %}
+                <small class="text-danger fw-bold">Como $\det(A) = 0$, la matriz no es invertible.</small>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <!-- ALERTA CUANDO LA MATRIZ ES SINGULAR -->
     {% if tipo_solucion == 'singular' %}
         <div class="alert alert-danger text-center mt-4 p-4 shadow-sm" style="border-radius: 15px;">
             <h4 class="fw-bold mb-2">🚫 La Matriz No Tiene Inversa ($A^{-1}$ No Existe)</h4>
-            <p class="mb-0 fs-6">Durante la reducción Gauss-Jordan no fue posible obtener pivotes en todas las columnas. La matriz es <strong>singular</strong> debido a que sus filas son linealmente dependientes (su determinante es $0$).</p>
+            <p class="mb-0 fs-6">Durante la reducción Gauss-Jordan no fue posible obtener pivotes en todas las columnas. La matriz es <strong>singular</strong> (su determinante es $0$).</p>
         </div>
     {% endif %}
 
@@ -187,7 +228,61 @@
         </div>
     {% endif %}
 
-    <!-- MOSTRAR MATRIZ RESULTADO (INVERSA O MULTIPLICACIÓN) -->
+    <!-- TEOREMA DE LA MATRIZ INVERTIBLE -->
+    {% if teorema %}
+        <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
+            <h3 style="color: #7b1fa2; font-weight: bold;">📘 Teorema de la Matriz Invertible</h3>
+            <p class="text-secondary">
+                Los siguientes enunciados son todos verdaderos o todos falsos para una matriz cuadrada $A$ de $n \times n$.
+                {% if tipo_solucion == 'invertible' %}
+                    <strong class="text-success">Como A es invertible, todos se cumplen.</strong>
+                {% elif tipo_solucion == 'singular' %}
+                    <strong class="text-danger">Como A no es invertible, ninguno se cumple.</strong>
+                {% endif %}
+            </p>
+            <div class="row">
+                {% for item in teorema %}
+                    <div class="col-md-6">
+                        <div class="teorema-item {{ 'cumple' if item.cumple else 'no-cumple' }}">
+                            <span class="teorema-letra">{{ item.letra }})</span>
+                            <span>{{ item.texto | safe }}</span>
+                            {% if item.cumple %}
+                                <span class="badge bg-success badge-cumple float-end">✔</span>
+                            {% else %}
+                                <span class="badge bg-danger badge-cumple float-end">✘</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- PROPIEDADES DE LA INVERSA -->
+    {% if propiedades %}
+        <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
+            <h3 style="color: #7b1fa2; font-weight: bold;">🔧 Propiedades de la Inversa</h3>
+            {% for prop in propiedades %}
+                <div class="prop-item {{ 'cumple' if prop.cumple == True else ('info' if prop.cumple is none else '') }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong style="color: #6a1b9a;">{{ prop.nombre }}</strong>
+                            <div class="text-secondary small">{{ prop.detalle }}</div>
+                        </div>
+                        {% if prop.cumple == True %}
+                            <span class="badge bg-success">✔ Verificado</span>
+                        {% elif prop.cumple == False %}
+                            <span class="badge bg-danger">✘ No verificado</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark">ℹ Informativo</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- MOSTRAR MATRIZ RESULTADO -->
     {% if matriz_resultado %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
             <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
@@ -204,11 +299,17 @@
         </div>
     {% endif %}
 
-    <!-- RESULTADOS VECTOR DE SOLUCIÓN GAUSS-JORDAN -->
+    <!-- RESULTADOS VECTOR DE SOLUCIÓN -->
     {% if resultados %}
         <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ce93d8; border-radius: 15px; background-color: white;">
             <img src="{{ url_for('static', filename='conejitocar.gif') }}" width="220" class="mx-auto d-block mb-3" alt="Resultado">
-            <h2 style="color: #8e24aa; font-weight: bold;">Solución General</h2>
+            <h2 style="color: #8e24aa; font-weight: bold;">
+                {% if tipo_solucion == 'solve_inversa' %}
+                    Solución del Sistema $x = A^{-1} b$
+                {% else %}
+                    Solución General
+                {% endif %}
+            </h2>
             <div class="row mt-3 justify-content-center">
                 {% for i in range(resultados|length) %}
                     <div class="col-auto mb-2">
@@ -223,7 +324,6 @@
 </div>
 
 <script>
-    // Objeto con entradas enviadas previamente desde el backend
     const savedInputs = JSON.parse('{{ (inputs or {}) | tojson | safe }}');
 
     function crearInput(nombre, claseExtra) {
@@ -241,11 +341,13 @@
         document.getElementById('panel-gauss').style.display = nuevoModo === 'gauss' ? 'block' : 'none';
         document.getElementById('panel-inversa').style.display = nuevoModo === 'inversa' ? 'block' : 'none';
         document.getElementById('panel-multiplicacion').style.display = nuevoModo === 'multiplicacion' ? 'block' : 'none';
-        
+        document.getElementById('panel-resolver-inversa').style.display = nuevoModo === 'resolver_inversa' ? 'block' : 'none';
+
         const tabs = document.querySelectorAll('#pills-tab .nav-link');
         tabs[0].classList.toggle('active', nuevoModo === 'gauss');
         tabs[1].classList.toggle('active', nuevoModo === 'inversa');
         tabs[2].classList.toggle('active', nuevoModo === 'multiplicacion');
+        tabs[3].classList.toggle('active', nuevoModo === 'resolver_inversa');
     }
 
     function generarGridGauss() {
@@ -280,6 +382,30 @@
                 rowDiv.appendChild(crearInput(`inv_a_${i}_${j}`, 'inv-val'));
             }
             container.appendChild(rowDiv);
+        }
+    }
+
+    function generarGridSolve() {
+        const dim = parseInt(document.getElementById('dim_solve').value) || 2;
+        const containerA = document.getElementById('grid-solve-a');
+        const containerB = document.getElementById('grid-solve-b');
+        containerA.innerHTML = "";
+        containerB.innerHTML = "";
+
+        for (let i = 0; i < dim; i++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'grid-row';
+            for (let j = 0; j < dim; j++) {
+                rowDiv.appendChild(crearInput(`solve_a_${i}_${j}`, 'solve-val'));
+            }
+            containerA.appendChild(rowDiv);
+        }
+
+        for (let i = 0; i < dim; i++) {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'grid-row';
+            rowDiv.appendChild(crearInput(`solve_b_${i}`, 'solve-val result-cell'));
+            containerB.appendChild(rowDiv);
         }
     }
 
@@ -323,10 +449,11 @@
         document.getElementById('pantalla-carga').style.display = 'flex';
     });
 
-    // Inicializar vistas al cargar
+    // Inicializar vistas
     cambiarModo("{{ modo or 'gauss' }}");
     generarGridGauss();
     generarGridInversa();
+    generarGridSolve();
     actualizarDimensionesMult();
 </script>
 </body>
