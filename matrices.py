@@ -166,16 +166,6 @@ class AlgebraicExpression:
 def parse_expression(value_str):
     return AlgebraicExpression.parse(value_str)
 
-def format_value(value):
-    """Convierte un valor (AlgebraicExpression o str) a LaTeX."""
-    if isinstance(value, AlgebraicExpression):
-        return value.to_latex()
-    return str(value)
-
-
-def format_matrix(matrix):
-    """Convierte una matriz 2D a una matriz de strings LaTeX."""
-    return [[format_value(v) for v in row] for row in matrix]
 
 
 def fraction_latex(f):

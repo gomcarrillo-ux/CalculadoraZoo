@@ -60,6 +60,16 @@
         <p class="text-secondary fw-bold mt-2">Selecciona un procedimiento algebraico para resolver paso a paso</p>
     </div>
 
+    <!-- BANNER DE CAPACIDAD DE LA COMPUTADORA -->
+    {% if limite_sistema %}
+    <div class="alert border-0 shadow-sm text-center my-3 py-2" style="border-radius: 12px; background-color: #f3e5f5; color: #4a148c;">
+        <small class="fw-bold">
+            💻 <strong>Capacidad del Sistema:</strong> RAM disponible: {{ limite_sistema.ram_disponible_mb }} / {{ limite_sistema.ram_total_gb }} | 
+            <strong>Límite estimado de matriz soportada:</strong> {{ limite_sistema.max_dim }} ({{ limite_sistema.max_elementos }} celdas)
+        </small>
+    </div>
+    {% endif %}
+
     <!-- Pestañas de Selección de Modo -->
     <ul class="nav nav-pills nav-justified my-4" id="pills-tab" role="tablist">
         <li class="nav-item">
