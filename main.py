@@ -1,4 +1,6 @@
 # main.py
+import random
+import random
 from flask import Flask, render_template, request, url_for
 import undertale
 
@@ -8,7 +10,9 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/menu')
 def menu():
-    return render_template('menu.html', imagen_banner='ban1.png')
+    # Selecciona dinámicamente entre ban.png y banalt.png al recargar
+    imagen_banner = random.choice(['ban.png', 'banalt.png'])
+    return render_template('menu.html', imagen_banner=imagen_banner)
 
 # Ruta para entrar al nivel de Undertale
 @app.route('/undertale')
