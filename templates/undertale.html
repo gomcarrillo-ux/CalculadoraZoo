@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nivel: Determinación ❤️💀</title>
     <style>
         body { background-color: black; color: white; font-family: "Courier New", Courier, monospace; text-align: center; }
@@ -15,6 +16,9 @@
         .btn-accion:hover { background: white; color: black; }
         .fila-matriz { display: flex; justify-content: center; }
         .opciones-combate { margin-top: 15px; margin-bottom: 15px; }
+        .aviso { color: #ff5555; min-height: 1.4em; margin: 10px 0 0; }
+        .nota { font-size: 0.9em; color: #cccccc; margin: 5px auto; max-width: 600px; }
+        select option:disabled { color: #777777; }
     </style>
 </head>
 <body>
@@ -31,61 +35,114 @@
 
     <div class="dialogo">
         <p>* Un problema salvaje de determinantes bloquea el camino.</p>
-        <p>* Selecciona tu estrategia de ataque.</p>
+        <p>* Selecciona tu estrategia de ataque: Cofactores, Regla de Sarrus (3x3) o Eliminación (matriz triangular).</p>
     </div>
 
     <div class="campo-batalla">
-        <!-- Fase 1: Pedir tamaño y método -->
+        <!-- Fase 1: Pedir tamaño -->
         <div id="setup-section">
-            <label style="font-size: 1.2em;">Tamaño de la matriz (N x N):</label>
-            <input type="number" id="dim" class="matriz-input" min="1" max="10" value="3" style="width: 80px;">
+            <label for="dim" style="font-size: 1.2em;">Tamaño de la matriz (N x N):</label>
+            <input type="number" id="dim" class="matriz-input" min="1" max="10" step="1" value="3" style="width: 80px;">
             <br>
             <button type="button" class="btn-accion" onclick="generarMatriz()">PREPARAR ATAQUE</button>
+            <p id="aviso" class="aviso"></p>
         </div>
 
         <!-- Fase 2: Ingresar datos y luchar -->
         <form id="matriz-form" action="/resolver_determinacion" method="POST" style="display:none;">
             <h3 id="titulo-matriz">Introduce tu Matriz:</h3>
             <div id="grid"></div>
-            
+
             <div class="opciones-combate">
-                <label>Estrategia: </label>
-                <select name="metodo" class="matriz-input" style="width: auto; text-align: left;">
-                    <option value="auto">Automático (Más eficiente)</option>
+                <label for="metodo">Estrategia: </label>
+                <select name="metodo" id="metodo" class="matriz-input" style="width: auto; text-align: left;">
+                    <option value="auto">Automático (Cofactores si N ≤ 3, Eliminación si N ≥ 4)</option>
                     <option value="cofactores">Método de Cofactores</option>
-                    <option value="eliminacion">Cramer / Eliminación (Gauss)</option>
+                    <option value="sarrus">Regla de Sarrus (solo 3x3)</option>
+                    <option value="eliminacion">Eliminación (reducción a matriz triangular)</option>
                 </select>
+                <p id="nota-metodo" class="nota"></p>
             </div>
 
             <input type="hidden" name="dimension" id="dimension-hidden">
             <br>
             <button type="submit" class="btn-accion">❤️ ATACAR</button>
+            <button type="button" class="btn-accion" onclick="cambiarTamano()">↩ CAMBIAR TAMAÑO</button>
             <button type="button" class="btn-accion" onclick="reiniciar()">✖️ HUIR AL MENÚ</button>
         </form>
     </div>
 
     <script>
+        const MAX_N = 10;             // debe coincidir con MAX_N en determinantes.py
+        const MAX_N_COFACTORES = 8;   // debe coincidir con MAX_N_COFACTORES en determinantes.py
+
+        function actualizarMetodos(n) {
+            const select = document.getElementById('metodo');
+            const notas = [];
+
+            for (const opt of select.options) {
+                opt.disabled = false;
+                if (opt.value === 'sarrus' && n !== 3) {
+                    opt.disabled = true;
+                }
+                if (opt.value === 'cofactores' && n > MAX_N_COFACTORES) {
+                    opt.disabled = true;
+                }
+            }
+
+            if (n !== 3) {
+                notas.push('La Regla de Sarrus solo está disponible para matrices 3x3.');
+            }
+            if (n > MAX_N_COFACTORES) {
+                notas.push('Los cofactores requieren ~n! multiplicaciones: es inviable para matrices tan grandes.');
+            }
+
+            // Si la opción elegida quedó deshabilitada, volver a automático
+            if (select.options[select.selectedIndex].disabled) {
+                select.value = 'auto';
+            }
+            document.getElementById('nota-metodo').innerText = notas.join(' ');
+        }
+
         function generarMatriz() {
-            const n = document.getElementById('dim').value;
+            const aviso = document.getElementById('aviso');
+            const n = parseInt(document.getElementById('dim').value, 10);
+
+            if (isNaN(n) || n < 1 || n > MAX_N) {
+                aviso.innerText = `* Escribe un tamaño entero entre 1 y ${MAX_N}.`;
+                return;
+            }
+            aviso.innerText = '';
+
             const grid = document.getElementById('grid');
-            grid.innerHTML = ''; 
+            grid.innerHTML = '';
             document.getElementById('dimension-hidden').value = n;
-            
-            for(let i=0; i<n; i++) {
-                let div = document.createElement('div');
+
+            for (let i = 0; i < n; i++) {
+                const div = document.createElement('div');
                 div.className = 'fila-matriz';
-                for(let j=0; j<n; j++) {
-                    let inp = document.createElement('input');
-                    inp.type = 'number'; inp.step = 'any'; inp.name = `m_${i}_${j}`;
-                    inp.className = 'matriz-input'; inp.required = true;
+                for (let j = 0; j < n; j++) {
+                    const inp = document.createElement('input');
+                    inp.type = 'number';
+                    inp.step = 'any';
+                    inp.name = `m_${i}_${j}`;
+                    inp.className = 'matriz-input';
+                    inp.required = true;
                     div.appendChild(inp);
                 }
                 grid.appendChild(div);
             }
-            
+
+            actualizarMetodos(n);
+
             document.getElementById('setup-section').style.display = 'none';
             document.getElementById('matriz-form').style.display = 'block';
             document.getElementById('titulo-matriz').innerText = `Introduce tu Matriz ${n}x${n}:`;
+        }
+
+        function cambiarTamano() {
+            document.getElementById('matriz-form').style.display = 'none';
+            document.getElementById('setup-section').style.display = 'block';
         }
 
         function reiniciar() {
