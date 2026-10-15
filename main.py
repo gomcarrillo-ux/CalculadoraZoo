@@ -1,10 +1,21 @@
 # main.py
 import random
-import random
 from flask import Flask, render_template, request, url_for
+
+# Importación de todos los archivos / módulos
 import undertale
+from matrices import bp_matrices
+from vectores import bp_vectores
+from sistemas import bp_sistemas
+from romanos import bp_romanos
 
 app = Flask(__name__)
+
+# Registro de los Blueprints para activar las rutas de cada programa
+app.register_blueprint(bp_matrices)
+app.register_blueprint(bp_vectores)
+app.register_blueprint(bp_sistemas)
+app.register_blueprint(bp_romanos)
 
 # Ruta para el menú principal
 @app.route('/')
@@ -43,8 +54,9 @@ def resolver_determinacion():
         for paso in pasos:
             pasos_html += f"<p style='text-align: left; margin-left: 10%;'>{paso}</p>"
 
-        # Generar la URL de la imagen de forma segura antes del f-string
+        # Generar las URLs de las imágenes de forma segura antes del f-string
         imagen_sangui = url_for('static', filename='sangui.gif')
+        imagen_towa = url_for('static', filename='towa.png')
 
         # Generar el HTML de respuesta dinámicamente
         return f"""
@@ -52,7 +64,10 @@ def resolver_determinacion():
             <h1>❤️ ¡GOLPE CRÍTICO!</h1>
             
             <div style="border: 2px solid white; padding: 20px; width: 80%; margin: 0 auto; background: #111; overflow-x: auto;">
-                <h3 style="text-align: left; margin-left: 10%;">* Registro de Batalla (Paso a Paso):</h3>
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid white; padding-bottom: 10px; margin-bottom: 15px;">
+                    <h3 style="text-align: left; margin: 0;">* Registro de Batalla (Paso a Paso):</h3>
+                    <img src="{imagen_towa}" alt="towa" style="max-height: 100px;">
+                </div>
                 {pasos_html}
             </div>
 

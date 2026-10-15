@@ -29,7 +29,7 @@ TAMANO_TEXTO_PASOS = "1.25em"      # texto de cada paso
 TAMANO_TEXTO_RESULTADO = "1.4em"   # línea del determinante final
 TAMANO_TABLAS = "1.35em"           # números dentro de las matrices
 
-# Formatos aceptados: 5, -3, 2.5, 2,5, .5, 1e3, 1.5e-2, 3/4
+# Formatos aceptados: 5, -3, 2.5, .5, 1e3, 1.5e-2, 3/4
 _PATRON_NUMERO = re.compile(
     r"[+-]?(?:\d+/\d+|(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:[eE][+-]?\d{1,3})?)"
 )
@@ -216,14 +216,14 @@ def determinante_cofactores(matriz, pasos):
                  f"(la que tiene más ceros) de la matriz {n}x{n}:")
     pasos.append(formatear_matriz(matriz))
     pasos.append("* Fórmula: det A = Σ aij · Cij, donde Cij = (−1)<sup>i+j</sup> · Mij "
-                 "y Mij es el menor (determinante de la submatriz sin la fila i y la columna j).")
+                 "y Mij es el Menor (determinante de la submatriz sin la fila i y la columna j).")
 
     terminos = []
     total = Fraction(0)
     for j in range(n):
         a = matriz[i][j]
         if a == 0:
-            pasos.append(f"<br>* a{i + 1}{j + 1} = 0 → su término vale 0, no hace falta calcular su menor.")
+            pasos.append(f"<br>* a{i + 1}{j + 1} = 0 → su término vale 0, no hace falta calcular su Menor.")
             continue
 
         signo = (-1) ** (i + j)
@@ -249,7 +249,7 @@ def determinante_cofactores(matriz, pasos):
 
     suma = " + ".join(par(t) for t in terminos) if terminos else "0"
     pasos.append(f"<br>* Suma de los términos: {suma} = {fmt(total)}")
-    pasos.append(f"<b>* ¡Determinante final calculado por cofactores: {fmt_final(total)}!</b>")
+    pasos.append(f"<b>* Determinante final calculado por cofactores: {fmt_final(total)}</b>")
     return total
 
 
