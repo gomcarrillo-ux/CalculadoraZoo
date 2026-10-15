@@ -1,42 +1,77 @@
 """
-Cálculo de determinantes con paso a paso.
+Cálculo de determinantes con procedimiento paso a paso.
 
-Métodos (basados en la presentación "Determinantes"):
+Métodos disponibles (basados en la presentación "Determinantes"):
   - cofactores  : desarrollo por cofactores (diapositivas 9-13). Requiere ~n! multiplicaciones.
   - sarrus      : regla de Sarrus, solo para matrices 3x3 (diapositiva 29).
   - eliminacion : reducción a forma triangular con operaciones de fila (diapositivas 15 y 18-24).
                   det A = (-1)^k · (producto de la diagonal de U), con k = número de intercambios.
-  - auto        : cofactores si n <= 3, eliminación si n >= 4 (diapositivas 15-16).
+  - auto        : cofactores si n <= 3 y eliminación si n >= 4 (diapositivas 15-16).
 
 Nota: la regla de Cramer (diapositivas 30-32) sirve para RESOLVER sistemas Ax = b usando
-determinantes; no es un método para calcular un determinante, por eso ya no se usa ese nombre.
+determinantes; no es un método para calcular un determinante.
 
-Todo el cálculo se hace con fracciones exactas (Fraction) para evitar errores de redondeo.
+Todo el cálculo usa fracciones exactas para evitar errores de redondeo.
+Todos los errores de validación se lanzan como ErrorDeterminante (subclase de ValueError)
+y sus mensajes están en castellano.
 """
+import re
 from fractions import Fraction
 
 METODOS_VALIDOS = ("auto", "cofactores", "sarrus", "eliminacion")
-MAX_N = 10               # tamaño máximo aceptado
-MAX_N_COFACTORES = 8     # más allá de esto, n! es demasiado costoso (diapositivas 15-16)
+MAX_N = 10                # tamaño máximo aceptado (N x N)
+MAX_N_COFACTORES = 8      # más allá de esto, n! es demasiado costoso (diapositivas 15-16)
+LIMITE_VALOR = 10 ** 12   # valor absoluto máximo aceptado en cada entrada
+LARGO_MAX_TEXTO = 40      # largo máximo del texto de un número
+
+# Tamaños de letra del paso a paso (se pueden ajustar aquí)
+TAMANO_TEXTO_PASOS = "1.25em"      # texto de cada paso
+TAMANO_TEXTO_RESULTADO = "1.4em"   # línea del determinante final
+TAMANO_TABLAS = "1.35em"           # números dentro de las matrices
+
+# Formatos aceptados: 5, -3, 2.5, 2,5, .5, 1e3, 1.5e-2, 3/4
+_PATRON_NUMERO = re.compile(
+    r"[+-]?(?:\d+/\d+|(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:[eE][+-]?\d{1,3})?)"
+)
+
+
+class ErrorDeterminante(ValueError):
+    """Error de validación de los datos de entrada (mensaje siempre en castellano)."""
 
 
 # ---------------------------------------------------------------------------
 # Utilidades
 # ---------------------------------------------------------------------------
-def a_fraccion(valor):
-    """Convierte un número (int, float, str) a Fraction exacta."""
-    if isinstance(valor, Fraction):
-        return valor
+def a_fraccion(valor, ubicacion=""):
+    """
+    Convierte un número (int, float, str o Fraction) a una Fraction exacta.
+    'ubicacion' es un texto opcional, por ejemplo " (fila 2, columna 3)", que se
+    agrega a los mensajes de error.
+    """
+    def mensaje_invalido():
+        texto = str(valor)[:LARGO_MAX_TEXTO]
+        return f"Valor no válido{ubicacion}: {texto!r}. Debe ser un número (por ejemplo 5, -3, 2.5 o 3/4)."
+
     if isinstance(valor, bool):
-        raise ValueError(f"Valor no numérico en la matriz: {valor!r}")
-    if isinstance(valor, int):
-        return Fraction(valor)
-    try:
-        if isinstance(valor, str):
-            return Fraction(valor.strip().replace(",", "."))
-        return Fraction(str(valor))
-    except (ValueError, ZeroDivisionError):
-        raise ValueError(f"Valor no numérico en la matriz: {valor!r}")
+        raise ErrorDeterminante(mensaje_invalido())
+
+    if isinstance(valor, (int, Fraction)):
+        resultado = Fraction(valor)
+    else:
+        texto = str(valor).strip()
+        if len(texto) > LARGO_MAX_TEXTO or not _PATRON_NUMERO.fullmatch(texto):
+            raise ErrorDeterminante(mensaje_invalido())
+        try:
+            resultado = Fraction(texto.replace(",", "."))
+        except (ValueError, ZeroDivisionError):
+            raise ErrorDeterminante(mensaje_invalido())
+
+    if abs(resultado) > LIMITE_VALOR:
+        raise ErrorDeterminante(
+            f"El valor{ubicacion} es demasiado grande: el máximo permitido es "
+            f"{LIMITE_VALOR} en valor absoluto."
+        )
+    return resultado
 
 
 def fmt(x):
@@ -48,13 +83,13 @@ def fmt(x):
 
 
 def par(x):
-    """Igual que fmt, pero entre paréntesis si es negativo."""
+    """Igual que fmt, pero entre paréntesis si el número es negativo."""
     x = Fraction(x)
     return fmt(x) if x >= 0 else f"({fmt(x)})"
 
 
 def fmt_final(x):
-    """Texto del resultado final (con aproximación decimal si es fracción)."""
+    """Texto del resultado final (con aproximación decimal si es una fracción)."""
     x = Fraction(x)
     if x.denominator == 1:
         return fmt(x)
@@ -74,7 +109,8 @@ def copiar_matriz(matriz):
 
 def formatear_matriz(matriz):
     """Convierte la matriz a una tabla HTML para mostrarla en el paso a paso."""
-    res = "<table style='margin: 10px auto; border-collapse: collapse; text-align: center; font-size: 1.1em;'>"
+    res = (f"<table style='margin: 10px auto; border-collapse: collapse; text-align: center; "
+           f"font-size: {TAMANO_TABLAS};'>")
     for fila in matriz:
         res += "<tr>"
         for val in fila:
@@ -84,22 +120,46 @@ def formatear_matriz(matriz):
     return res
 
 
-def matriz_desde_formulario(form, n):
+def dar_formato_pasos(pasos):
+    """
+    Devuelve los pasos con la letra más grande. Solo cambia el tamaño de la fuente:
+    no altera la alineación ni el espaciado, porque usa un <span> (en línea) y no un bloque.
+    Las tablas ya traen su propio tamaño.
+    """
+    resultado = []
+    for paso in pasos:
+        if paso.startswith("<table"):
+            resultado.append(paso)
+            continue
+        tamano = TAMANO_TEXTO_RESULTADO if "Determinante final" in paso else TAMANO_TEXTO_PASOS
+        resultado.append(f"<span style='font-size: {tamano};'>{paso}</span>")
+    return resultado
+
+
+def matriz_desde_formulario(formulario, dimension):
     """
     Lee del formulario HTML los campos m_i_j y devuelve la matriz n x n.
-    Uso en Flask:  matriz = matriz_desde_formulario(request.form, int(request.form['dimension']))
+    Uso en Flask:
+        matriz = matriz_desde_formulario(request.form, request.form.get('dimension'))
     """
-    n = int(n)
+    try:
+        n = int(str(dimension).strip())
+    except (TypeError, ValueError):
+        raise ErrorDeterminante("La dimensión debe ser un número entero.")
     if not 1 <= n <= MAX_N:
-        raise ValueError(f"La dimensión debe estar entre 1 y {MAX_N}.")
+        raise ErrorDeterminante(f"La dimensión debe estar entre 1 y {MAX_N}.")
+    if not hasattr(formulario, "get"):
+        raise ErrorDeterminante("El formulario recibido no es válido.")
+
     matriz = []
     for i in range(n):
         fila = []
         for j in range(n):
-            bruto = form.get(f"m_{i}_{j}")
+            ubicacion = f" (fila {i + 1}, columna {j + 1})"
+            bruto = formulario.get(f"m_{i}_{j}")
             if bruto is None or str(bruto).strip() == "":
-                raise ValueError(f"Falta el valor de la posición ({i + 1}, {j + 1}).")
-            fila.append(a_fraccion(bruto))
+                raise ErrorDeterminante(f"Falta el valor{ubicacion}.")
+            fila.append(a_fraccion(bruto, ubicacion))
         matriz.append(fila)
     return matriz
 
@@ -110,7 +170,7 @@ def _menor(matriz, i, j):
 
 
 def _mejor_fila(matriz):
-    """Fila con más ceros (en empate, la primera): simplifica el desarrollo."""
+    """Fila con más ceros (en caso de empate, la primera): simplifica el desarrollo."""
     n = len(matriz)
     return max(range(n), key=lambda i: (sum(1 for v in matriz[i] if v == 0), -i))
 
@@ -155,8 +215,8 @@ def determinante_cofactores(matriz, pasos):
     pasos.append(f"* Desarrollo por cofactores a lo largo de la fila {i + 1} "
                  f"(la que tiene más ceros) de la matriz {n}x{n}:")
     pasos.append(formatear_matriz(matriz))
-    pasos.append("* Fórmula: det A = Σ aᵢⱼ · Cᵢⱼ, donde Cᵢⱼ = (−1)<sup>i+j</sup> · Mᵢⱼ "
-                 "y Mᵢⱼ es el menor (determinante de la submatriz sin la fila i y la columna j).")
+    pasos.append("* Fórmula: det A = Σ aij · Cij, donde Cij = (−1)<sup>i+j</sup> · Mij "
+                 "y Mij es el menor (determinante de la submatriz sin la fila i y la columna j).")
 
     terminos = []
     total = Fraction(0)
@@ -249,8 +309,8 @@ def determinante_eliminacion(matriz, pasos):
     intercambios = 0
 
     pasos.append("* Iniciando reducción a matriz triangular (operaciones de fila):")
-    pasos.append("* Reemplazo Fᵢ → Fᵢ + k·Fⱼ: el determinante NO cambia. "
-                 "Intercambio Fᵢ ↔ Fⱼ: el determinante cambia de signo.")
+    pasos.append("* Reemplazo Fi → Fi + k·Fj: el determinante NO cambia. "
+                 "Intercambio Fi ↔ Fj: el determinante cambia de signo.")
     pasos.append(formatear_matriz(A))
 
     ya_triangular = all(A[r][c] == 0 for c in range(n) for r in range(c + 1, n))
@@ -310,19 +370,36 @@ def calcular_determinante(matriz, metodo="auto"):
     """
     Calcula el determinante de una matriz cuadrada.
     Devuelve (resultado, pasos). 'pasos' es una lista de cadenas HTML.
-    Lanza ValueError si los datos o el método no son válidos.
+    Lanza ErrorDeterminante (subclase de ValueError) si los datos o el método no son válidos.
     """
-    if not matriz or not isinstance(matriz, (list, tuple)):
-        raise ValueError("La matriz no puede estar vacía.")
+    # --- Validación de la estructura de la matriz ---
+    if not isinstance(matriz, (list, tuple)) or len(matriz) == 0:
+        raise ErrorDeterminante("La matriz no puede estar vacía y debe ser una lista de filas.")
     n = len(matriz)
-    if any(not isinstance(fila, (list, tuple)) or len(fila) != n for fila in matriz):
-        raise ValueError("La matriz debe ser cuadrada.")
     if n > MAX_N:
-        raise ValueError(f"El tamaño máximo permitido es {MAX_N}x{MAX_N}.")
-    if metodo not in METODOS_VALIDOS:
-        raise ValueError(f"Método desconocido: {metodo!r}.")
+        raise ErrorDeterminante(f"El tamaño máximo permitido es {MAX_N}x{MAX_N}.")
+    for i, fila in enumerate(matriz):
+        if not isinstance(fila, (list, tuple)):
+            raise ErrorDeterminante(f"La fila {i + 1} no es una lista de valores.")
+        if len(fila) != n:
+            raise ErrorDeterminante(
+                f"La matriz debe ser cuadrada: tiene {n} fila(s), pero la fila {i + 1} "
+                f"tiene {len(fila)} columna(s)."
+            )
 
-    A = [[a_fraccion(v) for v in fila] for fila in matriz]
+    # --- Validación del método ---
+    if not isinstance(metodo, str):
+        raise ErrorDeterminante("El método debe ser un texto: " + ", ".join(METODOS_VALIDOS) + ".")
+    metodo = metodo.strip().lower()
+    if metodo not in METODOS_VALIDOS:
+        raise ErrorDeterminante(
+            f"Método desconocido: {metodo[:LARGO_MAX_TEXTO]!r}. "
+            f"Los métodos válidos son: " + ", ".join(METODOS_VALIDOS) + "."
+        )
+
+    # --- Validación de los valores ---
+    A = [[a_fraccion(v, f" (fila {i + 1}, columna {j + 1})") for j, v in enumerate(fila)]
+         for i, fila in enumerate(matriz)]
 
     pasos = []
     if metodo == "auto":
@@ -338,12 +415,14 @@ def calcular_determinante(matriz, metodo="auto"):
 
     if metodo_usado == "cofactores":
         if n > MAX_N_COFACTORES:
-            raise ValueError(f"Los cofactores requieren ~n! multiplicaciones; para {n}x{n} es inviable. "
-                             f"Usa el método de eliminación.")
+            raise ErrorDeterminante(
+                f"Los cofactores requieren ~n! multiplicaciones; para {n}x{n} es inviable. "
+                f"Usa el método de eliminación."
+            )
         resultado = determinante_cofactores(A, pasos)
     elif metodo_usado == "sarrus":
         if n != 3:
-            raise ValueError("La regla de Sarrus solo se aplica a matrices 3x3.")
+            raise ErrorDeterminante("La regla de Sarrus solo se aplica a matrices 3x3.")
         resultado = determinante_sarrus(A, pasos)
     else:
         resultado = determinante_eliminacion(A, pasos)
@@ -353,4 +432,93 @@ def calcular_determinante(matriz, metodo="auto"):
     else:
         pasos.append("<br>* det A ≠ 0 → A es invertible.")
 
-    return a_numero(resultado), pasos
+    return a_numero(resultado), dar_formato_pasos(pasos)
+
+
+# ---------------------------------------------------------------------------
+# Autopruebas: ejecuta  python determinantes.py
+# ---------------------------------------------------------------------------
+def _autopruebas():
+    """Verifica el cálculo y las validaciones. Devuelve True si todo es correcto."""
+    correcto = True
+
+    def comprobar(descripcion, condicion):
+        nonlocal correcto
+        print(("  OK    " if condicion else "  FALLÓ ") + descripcion)
+        if not condicion:
+            correcto = False
+
+    print("Pruebas de cálculo:")
+    casos = [
+        ("2x2 de la presentación", [[3, -2], [-5, 4]], 2),
+        ("3x3 con ceros", [[1, 5, 0], [2, 4, -1], [0, -2, 0]], -2),
+        ("3x3 con eliminación", [[1, -4, 2], [-2, 8, -9], [-1, 7, 0]], 15),
+        ("triangular (3·2·(−2))", [[3, 5, 1], [0, 2, 7], [0, 0, -2]], -12),
+        ("singular 2x2", [[1, 2], [2, 4]], 0),
+        ("4x4 con intercambios", [[0, 2, 1, 3], [1, 0, 4, 2], [2, 1, 0, 1], [3, 1, 2, 0]], -33),
+        ("matriz identidad 5x5", [[1 if i == j else 0 for j in range(5)] for i in range(5)], 1),
+        ("1x1", [[7]], 7),
+    ]
+    for nombre, matriz, esperado in casos:
+        for metodo in ("auto", "cofactores", "eliminacion") + (("sarrus",) if len(matriz) == 3 else ()):
+            comprobar(f"{nombre} [{metodo}] = {esperado}", calcular_determinante(matriz, metodo)[0] == esperado)
+
+    comprobar("decimales: [[0.5, 1], [2, 3.5]] = -0.25", calcular_determinante([[0.5, 1], [2, 3.5]])[0] == -0.25)
+    comprobar("coma decimal: [['1,5', 2], [3, 4]] = 0", calcular_determinante([["1,5", 2], [3, 4]])[0] == 0)
+
+    print("Pruebas de validación (todos los mensajes deben estar en castellano):")
+    invalidos = [
+        ("matriz vacía", [], "auto"),
+        ("matriz no es lista", "abc", "auto"),
+        ("matriz no cuadrada", [[1, 2]], "auto"),
+        ("fila que no es lista", [[1, 2], 5], "auto"),
+        ("tamaño mayor al máximo", [[1] * 11] * 11, "eliminacion"),
+        ("Sarrus con 2x2", [[1, 2], [3, 4]], "sarrus"),
+        ("cofactores 9x9", [[1] * 9] * 9, "cofactores"),
+        ("texto en la matriz", [[1, "x"], [1, 1]], "auto"),
+        ("booleano en la matriz", [[True, 1], [1, 1]], "auto"),
+        ("infinito", [[float("inf"), 1], [1, 1]], "auto"),
+        ("no es un número", [[float("nan"), 1], [1, 1]], "auto"),
+        ("exponente enorme", [["1e999999999", 1], [1, 1]], "auto"),
+        ("valor demasiado grande", [[10 ** 13, 1], [1, 1]], "auto"),
+        ("división entre cero", [["1/0", 1], [1, 1]], "auto"),
+        ("método desconocido", [[1]], "cramer"),
+        ("método no es texto", [[1]], None),
+    ]
+    for descripcion, matriz, metodo in invalidos:
+        try:
+            calcular_determinante(matriz, metodo)
+            comprobar(f"{descripcion}: debía dar error", False)
+        except ErrorDeterminante as error:
+            comprobar(f"{descripcion}: {error}", True)
+
+    class FormularioFalso:
+        def __init__(self, datos):
+            self.datos = datos
+
+        def get(self, clave, defecto=None):
+            return self.datos.get(clave, defecto)
+
+    formulario = FormularioFalso({"m_0_0": "2", "m_0_1": "1", "m_1_0": "1", "m_1_1": "3"})
+    comprobar("formulario válido 2x2 = 5",
+              calcular_determinante(matriz_desde_formulario(formulario, "2"))[0] == 5)
+    for descripcion, formulario_prueba, dim in [
+        ("dimensión con texto", formulario, "abc"),
+        ("dimensión ausente", formulario, None),
+        ("dimensión fuera de rango", formulario, "0"),
+        ("campo faltante", FormularioFalso({"m_0_0": "1"}), "2"),
+        ("campo con texto", FormularioFalso({"m_0_0": "a"}), "1"),
+        ("formulario inválido", 5, "1"),
+    ]:
+        try:
+            matriz_desde_formulario(formulario_prueba, dim)
+            comprobar(f"{descripcion}: debía dar error", False)
+        except ErrorDeterminante as error:
+            comprobar(f"{descripcion}: {error}", True)
+
+    print("RESULTADO: " + ("todas las pruebas pasaron." if correcto else "hay pruebas que fallaron."))
+    return correcto
+
+
+if __name__ == "__main__":
+    raise SystemExit(0 if _autopruebas() else 1)
