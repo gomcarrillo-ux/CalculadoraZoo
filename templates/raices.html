@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Módulo 6: Raíces de Ecuaciones (Nivel Belugas 🐳❄️)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #e1f5fe 100%);
+            color: #004d40;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header-beluga {
+            background: linear-gradient(135deg, #00838f, #00acc1, #00695c);
+            color: white;
+            border-radius: 20px;
+            padding: 25px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 20px rgba(0, 131, 143, 0.3);
+            border: 3px solid #4dd0e1;
+        }
+
+        .header-beluga h1 { margin: 0; font-weight: 800; font-size: 2.2rem; }
+
+        /* CONTENEDOR CIRCULAR AZUL TRANSPARENTE PARA IMÁGENES Y GIFS */
+        .beluga-circle-wrapper {
+            width: 75px;
+            height: 75px;
+            min-width: 75px;
+            min-height: 75px;
+            border-radius: 50%;
+            background: rgba(0, 131, 143, 0.18);
+            border: 2px solid rgba(0, 131, 143, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 131, 143, 0.25);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .header-beluga .beluga-circle-wrapper {
+            width: 95px;
+            height: 95px;
+            min-width: 95px;
+            min-height: 95px;
+            background: rgba(255, 255, 255, 0.25);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .beluga-circle-wrapper:hover {
+            transform: scale(1.08);
+            background: rgba(0, 131, 143, 0.28);
+        }
+
+        .beluga-img-inner {
+            max-width: 85%;
+            max-height: 85%;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+
+        .card-custom {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 25px;
+            border: 2px solid #80deea;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            margin-top: 20px;
+        }
+
+        .table-excel {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Consolas', 'Courier New', monospace;
+            background-color: white;
+            font-size: 0.95rem;
+        }
+
+        .table-excel th {
+            background-color: #f2f2f2;
+            color: #333;
+            border: 1px solid #d0d0d0;
+            padding: 8px 12px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .table-excel td {
+            border: 1px solid #e0e0e0;
+            padding: 6px 10px;
+            text-align: right;
+        }
+
+        .table-excel tr:nth-child(even) { background-color: #fafafa; }
+        .table-excel tr:hover { background-color: #e0f7fa; }
+
+        .btn-beluga {
+            background: linear-gradient(135deg, #00838f, #00acc1);
+            color: white;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-beluga:hover {
+            background: linear-gradient(135deg, #00695c, #00838f);
+            color: white;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container" style="max-width: 1100px;">
+
+    <!-- BOTÓN REGRESO AL MENÚ -->
+    <a href="/" class="btn btn-outline-info mb-3 fw-bold text-dark bg-white">⬅ Volver al Menú Principal</a>
+
+    <!-- CABECERA DE BELUGAS -->
+    <header class="header-beluga">
+        <div>
+            <h1>Módulo 6: Raíces de Ecuaciones 🐳❄️</h1>
+            <p class="mb-0 fs-5 text-white-50">Bioma Ártico / Métodos Numéricos Abiertos y Cerrados</p>
+        </div>
+        <div class="beluga-circle-wrapper">
+            <img src="{{ url_for('static', filename='be1.png') }}" alt="Beluga 1" class="beluga-img-inner">
+        </div>
+    </header>
+
+    <!-- FORMULARIO DE ENTRADA -->
+    <div class="card-custom">
+        <form method="POST" action="/raices">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary">Ecuación f(x) = 0:</label>
+                    <input type="text" name="ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x4 - 5x3 + 0.5x2 - 11x + 10" required>
+                    <small class="text-muted d-block mt-1">Soporta notación directa: <b>x4 - 5x3 + 0.5x2 - 11x + 10</b>, <b>5y2 + 7y6</b>, <b>x^2 - 4</b></small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold text-secondary">Método Numérico:</label>
+                    <select name="metodo" class="form-select form-select-lg border-info fw-bold" id="select-metodo" onchange="ajustarLabels()">
+                        <option value="biseccion" {% if metodo == 'biseccion' %}selected{% endif %}>Bisección (Cerrado)</option>
+                        <option value="regla_falsa" {% if metodo == 'regla_falsa' %}selected{% endif %}>Regla Falsa / Falsa Posición (Cerrado)</option>
+                        <option value="newton" {% if metodo == 'newton' %}selected{% endif %}>Newton-Raphson (Abierto)</option>
+                        <option value="secante" {% if metodo == 'secante' %}selected{% endif %}>Secante (Abierto)</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary" id="lbl-a">Extremo a (o x0):</label>
+                    <input type="text" name="a" class="form-control border-info" value="{{ a }}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary" id="lbl-b">Extremo b (o x1):</label>
+                    <input type="text" name="b" class="form-control border-info" value="{{ b }}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">Tolerancia (Error Máx):</label>
+                    <input type="text" name="tol" class="form-control border-info" value="{{ tol }}" required>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary">Máx. Iteraciones:</label>
+                    <input type="number" name="max_iter" class="form-control border-info" value="{{ max_iter }}" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-beluga fs-5 w-100 mt-4">🐋 CALCULAR RAÍZ Y GRAFICAR</button>
+        </form>
+    </div>
+
+    <!-- MOSTRAR ALERTA DE ERROR -->
+    {% if error %}
+        <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    <!-- GRÁFICA GEOGEBRA -->
+    {% if puntos_grafica %}
+    <div class="card-custom text-center">
+        <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
+            <div class="beluga-circle-wrapper">
+                <img src="{{ url_for('static', filename='beg1.gif') }}" class="beluga-img-inner" alt="Beluga Nieve">
+            </div>
+            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Gráfica de la Función f(x)</h3>
+        </div>
+        <div style="height: 380px; position: relative;">
+            <canvas id="graficaCurva"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- TABLA GENERAL ESTILO EXCEL -->
+    {% if tabla %}
+    <div class="card-custom">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Hoja de Cálculo General (Resumen de Iteraciones)</h3>
+            <div class="beluga-circle-wrapper">
+                <img src="{{ url_for('static', filename='be2.png') }}" class="beluga-img-inner" alt="Beluga 2">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table-excel">
+                <thead>
+                    <tr>
+                        <th>it</th>
+                        <th>a</th>
+                        <th>b</th>
+                        <th>c (raíz)</th>
+                        <th>f(a)</th>
+                        <th>f(b)</th>
+                        <th>f(c)</th>
+                        <th>Error Absoluto (Ea)</th>
+                        <th>Error Relativo (Er %)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in tabla %}
+                    <tr>
+                        <td style="text-align: center; font-weight: bold;">{{ fila.it }}</td>
+                        <td>{{ "%.6f"|format(fila.a) }}</td>
+                        <td>{{ "%.6f"|format(fila.b) }}</td>
+                        <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.c) }}</td>
+                        <td>{{ "%.6f"|format(fila.fa) }}</td>
+                        <td>{{ "%.6f"|format(fila.fb) }}</td>
+                        <td>{{ "%.6f"|format(fila.fc) }}</td>
+                        <td style="color: #c62828;">{{ "%.6f"|format(fila.error_abs) }}</td>
+                        <td style="color: #2e7d32;">{{ "%.4f"|format(fila.error_rel) }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 p-3 rounded-3" style="background-color: #e0f2f1; border: 2px solid #80deea;">
+            <h4 class="fw-bold mb-1" style="color: #00695c;">Resumen de la Solución:</h4>
+            <p class="mb-1 fs-5"><b>Se realizaron {{ tabla|length }} iteraciones.</b></p>
+            <p class="mb-1 fs-4" style="color: #00838f;"><b>La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</b></p>
+            <p class="mb-0 fs-5" style="color: #c62828;"><b>Error Absoluto Final = {{ "%.6f"|format(tabla[-1].error_abs) }}</b></p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- PASO A PASO CON TABLAS INDIVIDUALES -->
+    {% if pasos %}
+    <div class="card-custom">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="beluga-circle-wrapper">
+                <img src="{{ url_for('static', filename='beg2.gif') }}" class="beluga-img-inner" alt="Beluga Teclado">
+            </div>
+            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Desglose Paso a Paso (Gráfico e Iterativo)</h3>
+        </div>
+
+        {% for paso in pasos %}
+            {{ paso | safe }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- INYECCIÓN SEGURA DE DATOS A JAVASCRIPT -->
+<script id="data-grafica" type="application/json">
+    {{ (puntos_grafica if (puntos_grafica is defined and puntos_grafica is not none) else []) | tojson }}
+</script>
+<script id="data-raiz" type="application/json">
+    {{ (raiz_hallada if (raiz_hallada is defined and raiz_hallada is not none) else None) | tojson }}
+</script>
+
+<script>
+    function ajustarLabels() {
+        const m = document.getElementById('select-metodo').value;
+        const lblA = document.getElementById('lbl-a');
+        const lblB = document.getElementById('lbl-b');
+
+        if (m === 'newton') {
+            lblA.innerText = 'Punto inicial (x0):';
+            lblB.innerText = 'No usado en Newton';
+        } else if (m === 'secante') {
+            lblA.innerText = 'Punto inicial (x0):';
+            lblB.innerText = 'Punto inicial (x1):';
+        } else {
+            lblA.innerText = 'Extremo a:';
+            lblB.innerText = 'Extremo b:';
+        }
+    }
+    ajustarLabels();
+
+    const rawGrafica = document.getElementById('data-grafica').textContent;
+    const rawRaiz = document.getElementById('data-raiz').textContent;
+
+    const datosGrafica = JSON.parse(rawGrafica);
+    const raizX = JSON.parse(rawRaiz);
+
+    if (datosGrafica && datosGrafica.length > 0) {
+        const labelsX = datosGrafica.map(p => p.x);
+        const datosY = datosGrafica.map(p => p.y);
+
+        const datasets = [
+            {
+                label: 'f(x)',
+                data: datosY,
+                borderColor: '#00838f',
+                borderWidth: 3,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.1
+            }
+        ];
+
+        if (raizX !== null) {
+            datasets.push({
+                label: 'Raíz Hallada',
+                data: [{x: raizX, y: 0}],
+                backgroundColor: '#e94560',
+                borderColor: '#e94560',
+                pointRadius: 8,
+                pointHoverRadius: 10,
+                type: 'scatter'
+            });
+        }
+
+        const ctx = document.getElementById('graficaCurva').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labelsX,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        grid: { color: '#e0e0e0' }
+                    },
+                    y: {
+                        grid: { color: '#e0e0e0' }
+                    }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

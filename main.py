@@ -8,6 +8,7 @@ from matrices import bp_matrices
 from vectores import bp_vectores
 from sistemas import bp_sistemas
 from romanos import bp_romanos
+from raices import bp_raices  # <--- NUEVO MÓDULO DE BELUGAS
 
 app = Flask(__name__)
 
@@ -16,6 +17,7 @@ app.register_blueprint(bp_matrices)
 app.register_blueprint(bp_vectores)
 app.register_blueprint(bp_sistemas)
 app.register_blueprint(bp_romanos)
+app.register_blueprint(bp_raices)   # <--- REGISTRAR RUTA DE RAÍCES / BELUGAS
 
 # Ruta para el menú principal
 @app.route('/')
