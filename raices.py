@@ -12,7 +12,7 @@ Todos los métodos están codificados paso a paso desde cero sin librerías de r
 import math
 import re
 from flask import Blueprint, render_template, request
-from sympy import Symbol, diff, lambdify
+from sympy import Symbol, diff, lambdify, sympify
 from sympy.parsing.sympy_parser import (
     parse_expr,
     standard_transformations,
@@ -23,41 +23,88 @@ from sympy.parsing.sympy_parser import (
 bp_raices = Blueprint('raices', __name__)
 
 # ============================================================
-# EVALUADOR MATEMÁTICO ULTRA-FLEXIBLE
+# PARSERS NUMÉRICOS FLEXIBLES (NOTACIÓN CIENTÍFICA Y POTENCIAS)
+# ============================================================
+
+def parse_float_flexible(val_str, default=0.0):
+    """Parsea números flotantes aceptando decimales, notación científica (1e-6) o potencias (10^-6)."""
+    try:
+        s = str(val_str).strip().replace(',', '.')
+        if '^' in s:
+            s = s.replace('^', '**')
+            return float(sympify(s))
+        return float(s)
+    except Exception:
+        return default
+
+def parse_int_flexible(val_str, default=20):
+    """Parsea enteros aceptando notación científica (ej: 1e2 -> 100, 1e-6 -> fallback seguro a default)."""
+    try:
+        val_float = parse_float_flexible(val_str, default)
+        val_int = int(val_float)
+        if val_int < 1:
+            return default
+        return min(val_int, 1000)  # Límite máximo de seguridad para no saturar el servidor
+    except Exception:
+        return default
+
+# ============================================================
+# EVALUADOR MATEMÁTICO ULTRA-FLEXIBLE Y ROBUSTO
 # ============================================================
 
 def normalizar_expresion(expr_str):
     """
-    Convierte sintaxis de usuario como 'x4 - 5x3 + 0.5x2 - 11x + 10' o '5y2 + 7y6' 
-    en sintaxis estándar de SymPy ('x**4 - 5*x**3 + 0.5*x**2 - 11*x + 10').
+    Convierte sintaxis flexible de usuario (soportando 'In', 'ln', 'log', 'sen', 'cos', 'tan', 'tg',
+    expresiones sin paréntesis como 'cosx' o 'senx', potencias y multiplicación implícita)
+    en sintaxis matemática estándar de SymPy.
     """
     s = expr_str.strip().replace(',', '.')
     s = s.replace('^', '**')
     
-    # 1. Proteger funciones matemáticas conocidas
-    funcs = ['sin', 'cos', 'tan', 'exp', 'log', 'sqrt', 'abs', 'asin', 'acos', 'atan']
-    for f in funcs:
-        s = re.sub(r'\b' + f + r'\b', f"__FUNC_{f.upper()}__", s, flags=re.IGNORECASE)
+    # 1. Normalizar funciones en español y variantes de logaritmo
+    s = re.sub(r'\b(seno|sen)\b', 'sin', s, flags=re.IGNORECASE)
+    s = re.sub(r'\b(coseno)\b', 'cos', s, flags=re.IGNORECASE)
+    s = re.sub(r'\b(tangente|tg)\b', 'tan', s, flags=re.IGNORECASE)
+    s = re.sub(r'\b(cotangente|ctg|cotan)\b', 'cot', s, flags=re.IGNORECASE)
+    s = re.sub(r'\b(cosecante|cosec)\b', 'csc', s, flags=re.IGNORECASE)
+    s = re.sub(r'\b(ln|in|log)\b', 'log', s, flags=re.IGNORECASE)
+    
+    # 2. Envolver argumentos pegados sin paréntesis (ej: cosx -> cos(x), sen2x -> sin(2x), logx -> log(x))
+    patron_funcs = r'(asin|acos|atan|sinh|cosh|tanh|sin|cos|tan|cot|sec|csc|log|exp|sqrt|abs)'
+    s = re.sub(patron_funcs + r'\s*([a-zA-Z0-9_]+)(?!\()', r'\1(\2)', s, flags=re.IGNORECASE)
+    
+    # 3. Proteger funciones usando marcadores numéricos para que el reemplazo de variables no las corrompa
+    mapa_funciones = [
+        ('asin', '__1__'),  ('acos', '__2__'),  ('atan', '__3__'),
+        ('sinh', '__4__'),  ('cosh', '__5__'),  ('tanh', '__6__'),
+        ('sin', '__7__'),   ('cos', '__8__'),   ('tan', '__9__'),
+        ('cot', '__10__'),  ('sec', '__11__'),  ('csc', '__12__'),
+        ('log', '__13__'),  ('exp', '__14__'),  ('sqrt', '__15__'),
+        ('abs', '__16__')
+    ]
+    for orig, mark in mapa_funciones:
+        s = re.sub(r'\b' + orig + r'\b', mark, s, flags=re.IGNORECASE)
         
-    # 2. Reemplazar cualquier variable letra por 'x'
+    # 4. Reemplazar cualquier otra letra utilizada como variable (y, z, t, etc.) por 'x'
     s = re.sub(r'[a-wyzA-WYZ]', 'x', s)
     s = s.replace('X', 'x')
     
-    # 3. Restaurar funciones
-    for f in funcs:
-        s = s.replace(f"__FUNC_{f.upper()}__", f)
+    # 5. Restaurar los nombres de las funciones protegidas
+    for orig, mark in mapa_funciones:
+        s = s.replace(mark, orig)
         
-    # 4. Convertir patrón x seguido de dígitos (ej: x2 -> x**2, x10 -> x**10)
+    # 6. Convertir notación de exponentes como x2 -> x**2
     s = re.sub(r'x(?!\*)(?=\d)', 'x**', s)
     
-    # 5. Insertar multiplicación implícita (ej: 5x -> 5*x, 0.5x -> 0.5*x)
+    # 7. Insertar multiplicaciones implícitas (ej: 5x -> 5*x, xcos(x) -> x*cos(x), (x+1)x -> (x+1)*x)
     s = re.sub(r'(\d)\s*([a-zA-Z\(])', r'\1*\2', s)
     s = re.sub(r'(\))\s*([a-zA-Z0-9\(])', r'\1*\2', s)
+    s = re.sub(r'\bx\s*(\(|[a-zA-Z]+)', r'x*\1', s)
     
     return s
 
 def obtener_funciones(expr_str):
-    """Parsea la función del usuario soportando cualquier variante de exponente y multiplicación."""
+    """Parsea la función del usuario soportando cualquier variante de exponente, trigonométrica y multiplicación."""
     x = Symbol('x')
     expr_clean = normalizar_expresion(expr_str)
     
@@ -427,13 +474,12 @@ def metodo_secante(f, x0, x1, tol, max_iter):
 
 @bp_raices.route('/raices', methods=['GET', 'POST'])
 def raices():
-    # EJEMPLO VÁLIDO POR DEFECTO CON CAMBIO DE SIGNO (0.6 a 1.0)
     def_ecuacion = "x4 - 5x3 + 0.5x2 - 11x + 10"
     def_metodo = "biseccion"
     def_a = "0.6"
     def_b = "1.0"
     def_tol = "0.0001"
-    def_max_iter = 20
+    def_max_iter = "20"
 
     if request.method == 'GET':
         return render_template(
@@ -457,7 +503,7 @@ def raices():
     a_str = request.form.get('a', def_a)
     b_str = request.form.get('b', def_b)
     tol_str = request.form.get('tol', def_tol)
-    max_iter = int(request.form.get('max_iter', def_max_iter))
+    max_iter_str = request.form.get('max_iter', def_max_iter)
 
     tabla = []
     pasos = []
@@ -467,9 +513,11 @@ def raices():
     derivada_tex = ""
 
     try:
-        a_val = float(a_str)
-        b_val = float(b_str) if b_str else a_val + 1.0
-        tol_val = float(tol_str)
+        # Conversión numérica flexible con soporte para notación científica (ej: 1e-6)
+        a_val = parse_float_flexible(a_str, 0.0)
+        b_val = parse_float_flexible(b_str, a_val + 1.0)
+        tol_val = parse_float_flexible(tol_str, 0.0001)
+        max_iter = parse_int_flexible(max_iter_str, 20)
         
         f, df, f_tex, df_tex = obtener_funciones(ecuacion_input)
         derivada_tex = df_tex
@@ -486,7 +534,7 @@ def raices():
         if raiz_hallada is not None:
             raiz_hallada = float(raiz_hallada)
 
-        # Generación de puntos para la curva de la gráfica
+        # Generación de 101 puntos de la curva f(x) para la gráfica
         x_start = min(a_val, b_val) - 1.5
         x_end = max(a_val, b_val) + 1.5
         paso_g = (x_end - x_start) / 100.0
@@ -510,7 +558,7 @@ def raices():
         a=a_str,
         b=b_str,
         tol=tol_str,
-        max_iter=max_iter,
+        max_iter=max_iter_str,
         tabla=tabla,
         pasos=pasos,
         raiz_hallada=raiz_hallada,
