@@ -116,7 +116,7 @@
                 <label class="form-label fw-bold text-secondary d-block fs-5">Ingresa la Ecuación f(x) = 0:</label>
                 
                 <div class="input-group mb-3">
-                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + 0.5x² - 11x + 10" required>
+                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + eˣ - 10" required>
                     <button type="button" id="btn-graficar" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
                         📈 GENERAR GRÁFICA
                     </button>
@@ -151,19 +151,23 @@
                         <button type="button" class="btn-quick-dark" onclick="insertar('tanh(')">tanh</button>
                     </div>
 
-                    <!-- Fila 4: Logaritmos y Constantes -->
+                    <!-- Fila 4: Logaritmos, Constantes y Símbolos -->
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Otras:</small>
+                        <small class="text-muted fw-bold" style="width: 110px;">Símbolos:</small>
                         <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
                         <button type="button" class="btn-quick" onclick="insertar('log(')">log</button>
                         <button type="button" class="btn-quick" onclick="insertar('e')">e</button>
                         <button type="button" class="btn-quick" onclick="insertar('π')">π</button>
                         <button type="button" class="btn-quick" onclick="insertar('√(')">√</button>
+                        <button type="button" class="btn-quick" onclick="insertar('^')">^</button>
+                        <button type="button" class="btn-quick" onclick="insertar('(')">(</button>
+                        <button type="button" class="btn-quick" onclick="insertar(')')">)</button>
                     </div>
 
-                    <!-- Fila 5: Exponentes (Superíndices) -->
+                    <!-- Fila 5: Exponentes (Superíndices y variable x) -->
                     <div class="d-flex flex-wrap gap-1 align-items-center border-top pt-2 mt-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Exponentes:</small>
+                        <button type="button" class="btn-quick" style="background: #ffe082; border-color: #ffca28;" onclick="insertar('ˣ')">ˣ</button>
                         <button type="button" class="btn-quick" onclick="insertar('⁰')">⁰</button>
                         <button type="button" class="btn-quick" onclick="insertar('¹')">¹</button>
                         <button type="button" class="btn-quick" onclick="insertar('²')">²</button>
@@ -179,7 +183,7 @@
                 </div>
                 
                 <small class="text-muted d-block">
-                    <b>Guía rápida:</b> Puedes escribir <b>x⁴</b> (usando el teclado de arriba), <b>x^4</b>, <b>senx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
+                    <b>Guía rápida:</b> Puedes escribir <b>eˣ</b> (usando el botón amarillo), <b>x⁴</b>, <b>2^x</b>, <b>(x+1)^x</b>, <b>senx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
                 </small>
             </div>
 
@@ -414,7 +418,7 @@
         });
     }
 
-    // --- LLAMAR A PYTHON PARA GRAFICAR (Evita errores de JS) ---
+    // --- LLAMAR A PYTHON PARA GRAFICAR ---
     async function generarGraficaManually() {
         const ecuacion = document.getElementById('input-ecuacion').value;
         const aVal = parseFloat(document.getElementById('input-a').value) || -5;
@@ -431,7 +435,6 @@
         msg.innerText = '';
 
         try {
-            // Le pedimos a Python que interprete la ecuación y nos devuelva los puntos
             const response = await fetch('/raices/graficar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
