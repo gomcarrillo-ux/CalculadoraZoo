@@ -69,12 +69,26 @@
             background-color: #00838f; color: white; font-weight: bold;
             padding: 4px 10px; border-radius: 8px; font-size: 0.9rem;
         }
+        
+        /* Estilos para el teclado matemático */
+        .math-keyboard {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 10px;
+        }
         .btn-quick {
             background: #e0f7fa; color: #00695c; border: 1px solid #80deea;
-            border-radius: 8px; font-weight: bold; padding: 5px 10px; font-size: 0.9rem;
-            transition: all 0.2s;
+            border-radius: 6px; font-weight: bold; padding: 4px 8px; font-size: 0.9rem;
+            transition: all 0.2s; margin: 1px;
         }
         .btn-quick:hover { background: #b2ebf2; color: #004d40; transform: translateY(-1px); }
+        .btn-quick-dark {
+            background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db;
+            border-radius: 6px; font-weight: bold; padding: 4px 8px; font-size: 0.9rem;
+            transition: all 0.2s; margin: 1px;
+        }
+        .btn-quick-dark:hover { background: #d6d8db; color: #1e2125; transform: translateY(-1px); }
     </style>
 </head>
 <body>
@@ -101,40 +115,71 @@
                 <span class="step-badge mb-2 d-inline-block">PASO 1: Inspección Visual</span>
                 <label class="form-label fw-bold text-secondary d-block fs-5">Ingresa la Ecuación f(x) = 0:</label>
                 
-                <div class="input-group mb-2">
+                <div class="input-group mb-3">
                     <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + 0.5x² - 11x + 10" required>
                     <button type="button" id="btn-graficar" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
                         📈 GENERAR GRÁFICA
                     </button>
                 </div>
 
-                <!-- TECLADO MATEMÁTICO (Superíndices y símbolos) -->
-                <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                    <small class="text-muted me-1 fw-bold">Exponentes:</small>
-                    <button type="button" class="btn-quick" onclick="insertar('⁰')">⁰</button>
-                    <button type="button" class="btn-quick" onclick="insertar('¹')">¹</button>
-                    <button type="button" class="btn-quick" onclick="insertar('²')">²</button>
-                    <button type="button" class="btn-quick" onclick="insertar('³')">³</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁴')">⁴</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁵')">⁵</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁶')">⁶</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁷')">⁷</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁸')">⁸</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁹')">⁹</button>
-                    <button type="button" class="btn-quick" onclick="insertar('⁻')">⁻</button>
-                    
-                    <span class="text-muted mx-1">|</span>
-                    <small class="text-muted me-1 fw-bold">Símbolos:</small>
-                    <button type="button" class="btn-quick" onclick="insertar('e')">e</button>
-                    <button type="button" class="btn-quick" onclick="insertar('π')">π</button>
-                    <button type="button" class="btn-quick" onclick="insertar('√(')">√</button>
-                    <button type="button" class="btn-quick" onclick="insertar('sen(')">sen</button>
-                    <button type="button" class="btn-quick" onclick="insertar('cos(')">cos</button>
-                    <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
-                    <button type="button" class="btn-quick" onclick="insertar('log(')">log</button>
+                <!-- TECLADO MATEMÁTICO COMPLETO -->
+                <div class="math-keyboard mb-2">
+                    <!-- Fila 1: Trigonométricas Básicas -->
+                    <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                        <small class="text-muted fw-bold" style="width: 110px;">Básicas:</small>
+                        <button type="button" class="btn-quick" onclick="insertar('sen(')">sen</button>
+                        <button type="button" class="btn-quick" onclick="insertar('cos(')">cos</button>
+                        <button type="button" class="btn-quick" onclick="insertar('tan(')">tan</button>
+                        <button type="button" class="btn-quick" onclick="insertar('cot(')">cot</button>
+                        <button type="button" class="btn-quick" onclick="insertar('sec(')">sec</button>
+                        <button type="button" class="btn-quick" onclick="insertar('csc(')">csc</button>
+                    </div>
+
+                    <!-- Fila 2: Trigonométricas Inversas -->
+                    <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                        <small class="text-muted fw-bold" style="width: 110px;">Inversas:</small>
+                        <button type="button" class="btn-quick" onclick="insertar('arcsen(')">arcsen</button>
+                        <button type="button" class="btn-quick" onclick="insertar('arccos(')">arccos</button>
+                        <button type="button" class="btn-quick" onclick="insertar('arctan(')">arctan</button>
+                    </div>
+
+                    <!-- Fila 3: Hiperbólicas -->
+                    <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                        <small class="text-muted fw-bold" style="width: 110px;">Hiperbólicas:</small>
+                        <button type="button" class="btn-quick-dark" onclick="insertar('senh(')">senh</button>
+                        <button type="button" class="btn-quick-dark" onclick="insertar('cosh(')">cosh</button>
+                        <button type="button" class="btn-quick-dark" onclick="insertar('tanh(')">tanh</button>
+                    </div>
+
+                    <!-- Fila 4: Logaritmos y Constantes -->
+                    <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                        <small class="text-muted fw-bold" style="width: 110px;">Otras:</small>
+                        <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
+                        <button type="button" class="btn-quick" onclick="insertar('log(')">log</button>
+                        <button type="button" class="btn-quick" onclick="insertar('e')">e</button>
+                        <button type="button" class="btn-quick" onclick="insertar('π')">π</button>
+                        <button type="button" class="btn-quick" onclick="insertar('√(')">√</button>
+                    </div>
+
+                    <!-- Fila 5: Exponentes (Superíndices) -->
+                    <div class="d-flex flex-wrap gap-1 align-items-center border-top pt-2 mt-2">
+                        <small class="text-muted fw-bold" style="width: 110px;">Exponentes:</small>
+                        <button type="button" class="btn-quick" onclick="insertar('⁰')">⁰</button>
+                        <button type="button" class="btn-quick" onclick="insertar('¹')">¹</button>
+                        <button type="button" class="btn-quick" onclick="insertar('²')">²</button>
+                        <button type="button" class="btn-quick" onclick="insertar('³')">³</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁴')">⁴</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁵')">⁵</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁶')">⁶</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁷')">⁷</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁸')">⁸</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁹')">⁹</button>
+                        <button type="button" class="btn-quick" onclick="insertar('⁻')">⁻</button>
+                    </div>
                 </div>
+                
                 <small class="text-muted d-block">
-                    <b>Guía rápida:</b> Puedes escribir <b>x⁴</b> (usando el teclado de arriba), <b>x^4</b>, <b>cosx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
+                    <b>Guía rápida:</b> Puedes escribir <b>x⁴</b> (usando el teclado de arriba), <b>x^4</b>, <b>senx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
                 </small>
             </div>
 
@@ -290,6 +335,7 @@
         const valorActual = input.value;
         input.value = valorActual.substring(0, start) + texto + valorActual.substring(end);
         input.focus();
+        // Coloca el cursor justo después de lo insertado
         input.selectionStart = input.selectionEnd = start + texto.length;
     }
 
