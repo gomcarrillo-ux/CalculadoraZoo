@@ -11,146 +11,78 @@
             background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #e1f5fe 100%);
             color: #004d40;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
+            margin: 0; padding: 20px;
         }
-
         .header-beluga {
             background: linear-gradient(135deg, #00838f, #00acc1, #00695c);
-            color: white;
-            border-radius: 20px;
-            padding: 25px 35px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            color: white; border-radius: 20px; padding: 25px 35px;
+            display: flex; align-items: center; justify-content: space-between;
             box-shadow: 0 8px 20px rgba(0, 131, 143, 0.3);
             border: 3px solid #4dd0e1;
         }
-
         .header-beluga h1 { margin: 0; font-weight: 800; font-size: 2.2rem; }
-
         .beluga-circle-wrapper {
-            width: 75px;
-            height: 75px;
-            min-width: 75px;
-            min-height: 75px;
-            border-radius: 50%;
-            background: rgba(0, 131, 143, 0.18);
+            width: 75px; height: 75px; min-width: 75px; min-height: 75px;
+            border-radius: 50%; background: rgba(0, 131, 143, 0.18);
             border: 2px solid rgba(0, 131, 143, 0.4);
             box-shadow: 0 4px 12px rgba(0, 131, 143, 0.25);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            transition: transform 0.3s ease, background 0.3s ease;
+            display: inline-flex; align-items: center; justify-content: center;
+            overflow: hidden; transition: transform 0.3s ease;
         }
-
         .header-beluga .beluga-circle-wrapper {
-            width: 95px;
-            height: 95px;
-            min-width: 95px;
-            min-height: 95px;
+            width: 95px; height: 95px; min-width: 95px; min-height: 95px;
             background: rgba(255, 255, 255, 0.25);
             border: 2px solid rgba(255, 255, 255, 0.6);
         }
-
-        .beluga-circle-wrapper:hover {
-            transform: scale(1.08);
-            background: rgba(0, 131, 143, 0.28);
-        }
-
-        .beluga-img-inner {
-            max-width: 85%;
-            max-height: 85%;
-            object-fit: contain;
-            mix-blend-mode: multiply;
-        }
-
+        .beluga-circle-wrapper:hover { transform: scale(1.08); }
+        .beluga-img-inner { max-width: 85%; max-height: 85%; object-fit: contain; mix-blend-mode: multiply; }
         .card-custom {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 18px;
-            padding: 25px;
-            border: 2px solid #80deea;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            background: rgba(255, 255, 255, 0.95); border-radius: 18px; padding: 25px;
+            border: 2px solid #80deea; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
             margin-top: 20px;
         }
-
         .table-excel {
-            width: 100%;
-            border-collapse: collapse;
+            width: 100%; border-collapse: collapse;
             font-family: 'Consolas', 'Courier New', monospace;
-            background-color: white;
-            font-size: 0.95rem;
+            background-color: white; font-size: 0.95rem;
         }
-
         .table-excel th {
-            background-color: #f2f2f2;
-            color: #333;
-            border: 1px solid #d0d0d0;
-            padding: 8px 12px;
-            text-align: center;
-            font-weight: bold;
+            background-color: #f2f2f2; color: #333; border: 1px solid #d0d0d0;
+            padding: 8px 12px; text-align: center; font-weight: bold;
         }
-
-        .table-excel td {
-            border: 1px solid #e0e0e0;
-            padding: 6px 10px;
-            text-align: right;
-        }
-
+        .table-excel td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: right; }
         .table-excel tr:nth-child(even) { background-color: #fafafa; }
         .table-excel tr:hover { background-color: #e0f7fa; }
-
         .btn-graficar {
             background: linear-gradient(135deg, #00acc1, #00838f);
-            color: white;
-            border: none;
-            font-weight: bold;
-            border-radius: 12px;
-            padding: 12px 20px;
-            transition: all 0.3s ease;
+            color: white; border: none; font-weight: bold; border-radius: 12px;
+            padding: 12px 20px; transition: all 0.3s ease;
         }
-
-        .btn-graficar:hover {
-            background: linear-gradient(135deg, #00838f, #00695c);
-            color: white;
-            transform: translateY(-2px);
-        }
-
+        .btn-graficar:hover { background: linear-gradient(135deg, #00838f, #00695c); color: white; transform: translateY(-2px); }
         .btn-beluga {
             background: linear-gradient(135deg, #00695c, #004d40);
-            color: white;
-            font-weight: bold;
-            border: none;
-            border-radius: 12px;
-            padding: 14px 25px;
-            transition: all 0.3s ease;
+            color: white; font-weight: bold; border: none;
+            border-radius: 12px; padding: 14px 25px; transition: all 0.3s ease;
         }
-
-        .btn-beluga:hover {
-            background: linear-gradient(135deg, #004d40, #00251a);
-            color: white;
-            transform: translateY(-2px);
-        }
-
+        .btn-beluga:hover { background: linear-gradient(135deg, #004d40, #00251a); color: white; transform: translateY(-2px); }
         .step-badge {
-            background-color: #00838f;
-            color: white;
-            font-weight: bold;
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            background-color: #00838f; color: white; font-weight: bold;
+            padding: 4px 10px; border-radius: 8px; font-size: 0.9rem;
         }
+        .btn-quick {
+            background: #e0f7fa; color: #00695c; border: 1px solid #80deea;
+            border-radius: 8px; font-weight: bold; padding: 5px 10px; font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .btn-quick:hover { background: #b2ebf2; color: #004d40; transform: translateY(-1px); }
     </style>
 </head>
 <body>
 
 <div class="container" style="max-width: 1100px;">
 
-    <!-- BOTÓN REGRESO AL MENÚ -->
     <a href="/" class="btn btn-outline-info mb-3 fw-bold text-dark bg-white">⬅ Volver al Menú Principal</a>
 
-    <!-- CABECERA DE BELUGAS -->
     <header class="header-beluga">
         <div>
             <h1>Módulo 6: Raíces de Ecuaciones 🐳❄️</h1>
@@ -161,24 +93,52 @@
         </div>
     </header>
 
-    <!-- FORMULARIO DE ENTRADA -->
     <div class="card-custom">
         <form method="POST" action="/raices" id="form-raices">
-            
-            <!-- PASO 1: ENTRADA DE LA ECUACIÓN Y GENERACIÓN GRÁFICA INICIAL -->
+
+            <!-- PASO 1: ECUACIÓN Y TECLADO MATEMÁTICO -->
             <div class="mb-3">
                 <span class="step-badge mb-2 d-inline-block">PASO 1: Inspección Visual</span>
                 <label class="form-label fw-bold text-secondary d-block fs-5">Ingresa la Ecuación f(x) = 0:</label>
-                <div class="input-group">
-                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x4 - 5x3 + 0.5x2 - 11x + 10" required>
-                    <button type="button" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
-                        📈 GENERAR GRÁFICA DE INSPECCIÓN
+                
+                <div class="input-group mb-2">
+                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + 0.5x² - 11x + 10" required>
+                    <button type="button" id="btn-graficar" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
+                        📈 GENERAR GRÁFICA
                     </button>
                 </div>
-                <small class="text-muted d-block mt-1">Soporta: <b>x4 - 5x3</b>, <b>cosx - 1</b>, <b>ln(x+2)</b>, <b>senx</b>, <b>1e-6</b></small>
+
+                <!-- TECLADO MATEMÁTICO (Superíndices y símbolos) -->
+                <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
+                    <small class="text-muted me-1 fw-bold">Exponentes:</small>
+                    <button type="button" class="btn-quick" onclick="insertar('⁰')">⁰</button>
+                    <button type="button" class="btn-quick" onclick="insertar('¹')">¹</button>
+                    <button type="button" class="btn-quick" onclick="insertar('²')">²</button>
+                    <button type="button" class="btn-quick" onclick="insertar('³')">³</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁴')">⁴</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁵')">⁵</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁶')">⁶</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁷')">⁷</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁸')">⁸</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁹')">⁹</button>
+                    <button type="button" class="btn-quick" onclick="insertar('⁻')">⁻</button>
+                    
+                    <span class="text-muted mx-1">|</span>
+                    <small class="text-muted me-1 fw-bold">Símbolos:</small>
+                    <button type="button" class="btn-quick" onclick="insertar('e')">e</button>
+                    <button type="button" class="btn-quick" onclick="insertar('π')">π</button>
+                    <button type="button" class="btn-quick" onclick="insertar('√(')">√</button>
+                    <button type="button" class="btn-quick" onclick="insertar('sen(')">sen</button>
+                    <button type="button" class="btn-quick" onclick="insertar('cos(')">cos</button>
+                    <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
+                    <button type="button" class="btn-quick" onclick="insertar('log(')">log</button>
+                </div>
+                <small class="text-muted d-block">
+                    <b>Guía rápida:</b> Puedes escribir <b>x⁴</b> (usando el teclado de arriba), <b>x^4</b>, <b>cosx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
+                </small>
             </div>
 
-            <!-- PASO 2: GRÁFICA DE LA FUNCIÓN PARA IDENTIFICAR CORTE Y CAMBIO DE SIGNO -->
+            <!-- GRÁFICA -->
             <div class="mt-4 text-center">
                 <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
                     <div class="beluga-circle-wrapper">
@@ -186,7 +146,7 @@
                     </div>
                     <div>
                         <h3 class="fw-bold" style="color: #00838f; margin: 0;">Gráfica de Inspección de la Función f(x)</h3>
-                        <small class="text-muted">Observa dónde la curva cruza la línea roja (Eje Y = 0) para determinar los extremos del intervalo [a, b]</small>
+                        <small class="text-muted">Observa dónde la curva cruza la línea roja (Eje Y = 0). <span id="mensaje-grafica" class="text-danger fw-bold"></span></small>
                     </div>
                 </div>
                 <div style="height: 380px; position: relative;" class="p-2 bg-white rounded-4 border border-info-subtle">
@@ -194,16 +154,16 @@
                 </div>
             </div>
 
-            <!-- PASO 3: PARÁMETROS Y RESOLUCIÓN NUMÉRICA DEL ERROR -->
+            <!-- PASO 2: PARÁMETROS -->
             <div class="mt-4 pt-3 border-top">
-                <span class="step-badge mb-3 d-inline-block">PASO 2: Selección de Intervalo y Cálculo Iterativo</span>
+                <span class="step-badge mb-3 d-inline-block">PASO 2: Selección de Intervalo y Cálculo</span>
                 
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Método Numérico:</label>
                         <select name="metodo" class="form-select form-select-lg border-info fw-bold" id="select-metodo" onchange="ajustarLabels()">
                             <option value="biseccion" {% if metodo == 'biseccion' %}selected{% endif %}>Bisección (Cerrado)</option>
-                            <option value="regla_falsa" {% if metodo == 'regla_falsa' %}selected{% endif %}>Regla Falsa / Falsa Posición (Cerrado)</option>
+                            <option value="regla_falsa" {% if metodo == 'regla_falsa' %}selected{% endif %}>Regla Falsa (Cerrado)</option>
                             <option value="newton" {% if metodo == 'newton' %}selected{% endif %}>Newton-Raphson (Abierto)</option>
                             <option value="secante" {% if metodo == 'secante' %}selected{% endif %}>Secante (Abierto)</option>
                         </select>
@@ -230,7 +190,6 @@
                     </div>
                 </div>
 
-                <!-- BOTÓN DE CÁLCULO DE RAÍZ Y TABLAS -->
                 <button type="submit" class="btn btn-beluga fs-4 w-100 mt-4 shadow-sm">
                     🐋 CALCULAR RAÍZ, ERRORES Y RESOLVER
                 </button>
@@ -238,16 +197,13 @@
         </form>
     </div>
 
-    <!-- ÁREA DE RESULTADOS (RESUMEN, ERRORES Y TABLAS) -->
-
-    <!-- ALERTA DE ERROR -->
+    <!-- RESULTADOS -->
     {% if error %}
         <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
             {{ error }}
         </div>
     {% endif %}
 
-    <!-- TABLA GENERAL ESTILO EXCEL Y RESUMEN -->
     {% if tabla %}
     <div class="card-custom">
         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -262,8 +218,8 @@
                 <thead>
                     <tr>
                         <th>it</th>
-                        <th>a</th>
-                        <th>b</th>
+                        <th>a / x0</th>
+                        <th>b / x1</th>
                         <th>c (raíz)</th>
                         <th>f(a)</th>
                         <th>f(b)</th>
@@ -299,16 +255,14 @@
     </div>
     {% endif %}
 
-    <!-- DESGLOSE PASO A PASO CON TABLAS INDIVIDUALES -->
     {% if pasos %}
     <div class="card-custom">
         <div class="d-flex align-items-center gap-3 mb-3">
             <div class="beluga-circle-wrapper">
                 <img src="{{ url_for('static', filename='beg2.gif') }}" class="beluga-img-inner" alt="Beluga Teclado">
             </div>
-            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Desglose Paso a Paso (Gráfico e Iterativo)</h3>
+            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Desglose Paso a Paso</h3>
         </div>
-
         {% for paso in pasos %}
             {{ paso | safe }}
         {% endfor %}
@@ -317,7 +271,7 @@
 
 </div>
 
-<!-- INYECCIÓN SEGURA DE DATOS DESDE FLASK -->
+<!-- INYECCIÓN DE DATOS DESDE FLASK -->
 <script id="data-grafica" type="application/json">
     {{ (puntos_grafica if (puntos_grafica is defined and puntos_grafica is not none) else []) | tojson }}
 </script>
@@ -327,6 +281,17 @@
 
 <script>
     let chartInstance = null;
+
+    // --- TECLADO MATEMÁTICO ---
+    function insertar(texto) {
+        const input = document.getElementById('input-ecuacion');
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const valorActual = input.value;
+        input.value = valorActual.substring(0, start) + texto + valorActual.substring(end);
+        input.focus();
+        input.selectionStart = input.selectionEnd = start + texto.length;
+    }
 
     function ajustarLabels() {
         const m = document.getElementById('select-metodo').value;
@@ -346,142 +311,109 @@
     }
     ajustarLabels();
 
-    function evaluarJS(exprStr, valX) {
-        try {
-            let s = exprStr.toLowerCase().trim().replace(/,/g, '.');
-            s = s.replace(/\^/g, '**');
-            s = s.replace(/\b(seno|sen)\b/g, 'sin');
-            s = s.replace(/\b(coseno)\b/g, 'cos');
-            s = s.replace(/\b(tangente|tg)\b/g, 'tan');
-            s = s.replace(/\b(ln|in)\b/g, 'log');
-            
-            s = s.replace(/(sin|cos|tan|log|exp|sqrt|abs)\s*([a-z0-9_]+)(?!\()/g, '$1($2)');
-            s = s.replace(/x(?!\*)(?=\d)/g, 'x**');
-            s = s.replace(/(\d)\s*([a-z\(])/g, '$1*$2');
-            s = s.replace(/(\))\s*([a-z0-9\(])/g, '$1*$2');
-            s = s.replace(/\bx\s*(\(|[a-z]+)/g, 'x*$1');
+    // --- DIBUJAR GRÁFICA ---
+    function renderChart(puntos, raizX) {
+        if (!puntos || puntos.length === 0) return;
 
-            s = s.replace(/\b(sin|cos|tan|log|exp|sqrt|abs)\b/g, 'Math.$1');
+        const labelsX = puntos.map(p => p.x);
+        const datosY = puntos.map(p => p.y);
 
-            const f = new Function('x', 'return ' + s);
-            const res = f(valX);
-            return (isNaN(res) || !isFinite(res)) ? null : res;
-        } catch(e) {
-            return null;
-        }
-    }
-
-    function renderizarGrafica(forzarCliente = false) {
-        const rawGrafica = document.getElementById('data-grafica').textContent;
-        const rawRaiz = document.getElementById('data-raiz').textContent;
-
-        const datosServidor = JSON.parse(rawGrafica);
-        const raizX = JSON.parse(rawRaiz);
-
-        let puntos = [];
-
-        if (!forzarCliente && datosServidor && datosServidor.length > 0) {
-            puntos = datosServidor;
-        } else {
-            const eqStr = document.getElementById('input-ecuacion').value;
-            const aVal = parseFloat(document.getElementById('input-a').value);
-            const bVal = parseFloat(document.getElementById('input-b').value);
-            
-            // Si no hay rango válido cargado, se usa un rango de inspección amplio [-5, 5]
-            let minX = -5.0;
-            let maxX = 5.0;
-            
-            if (!isNaN(aVal) && !isNaN(bVal)) {
-                minX = Math.min(aVal, bVal) - 2.0;
-                maxX = Math.max(aVal, bVal) + 2.0;
+        const datasets = [
+            {
+                label: 'f(x)',
+                data: datosY,
+                borderColor: '#00838f',
+                borderWidth: 3,
+                fill: false,
+                pointRadius: 0,
+                tension: 0.1
+            },
+            {
+                label: 'Eje Y = 0',
+                data: labelsX.map(() => 0),
+                borderColor: '#d32f2f',
+                borderWidth: 1.5,
+                borderDash: [6, 4],
+                pointRadius: 0,
+                fill: false
             }
+        ];
 
-            const step = (maxX - minX) / 120;
-
-            for (let i = 0; i <= 120; i++) {
-                const xVal = minX + i * step;
-                const yVal = evaluarJS(eqStr, xVal);
-                if (yVal !== null && Math.abs(yVal) < 250) {
-                    puntos.push({x: Math.round(xVal * 1000) / 1000, y: Math.round(yVal * 1000) / 1000});
-                }
-            }
-        }
-
-        if (puntos.length > 0) {
-            const labelsX = puntos.map(p => p.x);
-            const datosY = puntos.map(p => p.y);
-
-            const datasets = [
-                {
-                    label: 'f(x)',
-                    data: datosY,
-                    borderColor: '#00838f',
-                    borderWidth: 3,
-                    fill: false,
-                    pointRadius: 0,
-                    tension: 0.1
-                },
-                {
-                    label: 'Eje Y = 0 (Corte de Raíz)',
-                    data: labelsX.map(() => 0),
-                    borderColor: '#d32f2f',
-                    borderWidth: 1.5,
-                    borderDash: [6, 4],
-                    pointRadius: 0,
-                    fill: false
-                }
-            ];
-
-            if (!forzarCliente && raizX !== null && raizX !== undefined) {
-                datasets.push({
-                    label: 'Raíz Calculada',
-                    data: [{x: raizX, y: 0}],
-                    backgroundColor: '#e94560',
-                    borderColor: '#e94560',
-                    pointRadius: 9,
-                    pointHoverRadius: 11,
-                    type: 'scatter'
-                });
-            }
-
-            const ctx = document.getElementById('graficaCurva').getContext('2d');
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
-
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labelsX,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'linear',
-                            position: 'bottom',
-                            grid: { color: '#e0e0e0' }
-                        },
-                        y: {
-                            grid: { color: '#e0e0e0' }
-                        }
-                    }
-                }
+        if (raizX !== null && raizX !== undefined) {
+            datasets.push({
+                label: 'Raíz Calculada',
+                data: [{x: raizX, y: 0}],
+                backgroundColor: '#e94560',
+                borderColor: '#e94560',
+                pointRadius: 9,
+                pointHoverRadius: 11,
+                type: 'scatter'
             });
         }
+
+        const ctx = document.getElementById('graficaCurva').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: labelsX, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', position: 'bottom', grid: { color: '#e0e0e0' } },
+                    y: { grid: { color: '#e0e0e0' } }
+                }
+            }
+        });
     }
 
-    // Botón 1: GENERAR GRÁFICA DE INSPECCIÓN
-    function generarGraficaManually() {
-        document.getElementById('data-grafica').textContent = '[]';
-        document.getElementById('data-raiz').textContent = 'null';
-        renderizarGrafica(true);
+    // --- LLAMAR A PYTHON PARA GRAFICAR (Evita errores de JS) ---
+    async function generarGraficaManually() {
+        const ecuacion = document.getElementById('input-ecuacion').value;
+        const aVal = parseFloat(document.getElementById('input-a').value) || -5;
+        const bVal = parseFloat(document.getElementById('input-b').value) || 5;
+        
+        let xmin = Math.min(aVal, bVal) - 3;
+        let xmax = Math.max(aVal, bVal) + 3;
+
+        const btn = document.getElementById('btn-graficar');
+        const msg = document.getElementById('mensaje-grafica');
+        
+        btn.innerHTML = '⏳ Cargando...';
+        btn.disabled = true;
+        msg.innerText = '';
+
+        try {
+            // Le pedimos a Python que interprete la ecuación y nos devuelva los puntos
+            const response = await fetch('/raices/graficar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ecuacion: ecuacion, xmin: xmin, xmax: xmax })
+            });
+            const data = await response.json();
+
+            if (data.ok) {
+                renderChart(data.puntos, null);
+            } else {
+                msg.innerText = 'Error: ' + data.error;
+            }
+        } catch (error) {
+            msg.innerText = 'Error de conexión con el servidor.';
+        } finally {
+            btn.innerHTML = '📈 GENERAR GRÁFICA';
+            btn.disabled = false;
+        }
     }
 
-    // Renderizar al cargar la página
-    renderizarGrafica(false);
+    // --- CARGA INICIAL ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const datosServidor = JSON.parse(document.getElementById('data-grafica').textContent);
+        const raizX = JSON.parse(document.getElementById('data-raiz').textContent);
+        if (datosServidor && datosServidor.length > 0) {
+            renderChart(datosServidor, raizX);
+        }
+    });
 </script>
 </body>
 </html>
