@@ -307,21 +307,24 @@ def generar_puntos(f, lo, hi, n=200):
 
 
 # ============================================================
-# MÉTODOS NUMÉRICOS (Implementados)
+# MÉTODOS NUMÉRICOS (Paso a Paso Detallado y Explicativo)
 # ============================================================
 
 def metodo_biseccion(f, a, b, tol, max_iter):
     tabla, pasos = [], []
-    fa, fb = f(a), f(b)
+    fa, fb = float(f(a)), float(f(b))
     if fa * fb > 0:
-        raise ValueError("El intervalo [a, b] no contiene un cambio de signo. Bisección requiere f(a)*f(b) < 0.")
+        raise ValueError(f"No hay cambio de signo en el intervalo [{a}, {b}]. f(a) = {fa:.6f}, f(b) = {fb:.6f}. Bisección requiere f(a)·f(b) < 0.")
     
     c_prev, raiz = None, None
     for it in range(1, max_iter + 1):
-        c = (a + b) / 2
-        fc = f(c)
-        error_abs = abs(c - c_prev) if c_prev is not None else 0.0
-        error_rel = (error_abs / abs(c)) * 100 if c_prev is not None and c != 0 else 0.0
+        c = (a + b) / 2.0
+        fc = float(f(c))
+        fa = float(f(a))
+        fb = float(f(b))
+        
+        error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
+        error_rel = (error_abs / abs(c)) * 100.0 if (c_prev is not None and c != 0) else 100.0
         
         tabla.append({
             'it': it, 'a': a, 'b': b, 'c': c,
@@ -329,16 +332,87 @@ def metodo_biseccion(f, a, b, tol, max_iter):
             'error_abs': error_abs, 'error_rel': error_rel
         })
         
-        pasos.append(f"<div class='alert alert-info'>Iteración {it}: a={a:.6f}, b={b:.6f}, c={c:.6f}, f(c)={fc:.6f}</div>")
+        prod = fa * fc
+        if prod < 0:
+            explicacion_cambio = (
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &lt; 0</b>.<br>"
+                f"👉 Dado que el producto es <b>negativo</b>, la raíz se encuentra atrapada en la mitad izquierda <b>[{a:.6f}, {c:.6f}]</b>. "
+                f"Por lo tanto, se reemplaza el extremo superior: <b>b pasa a valer c = {c:.6f}</b>."
+            )
+            b_next = c
+            a_next = a
+        else:
+            explicacion_cambio = (
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &gt; 0</b>.<br>"
+                f"👉 Dado que el producto es <b>positivo</b>, ambos puntos tienen el mismo signo y la raíz está en la mitad derecha <b>[{c:.6f}, {b:.6f}]</b>. "
+                f"Por lo tanto, se reemplaza el extremo inferior: <b>a pasa a valer c = {c:.6f}</b>."
+            )
+            a_next = c
+            b_next = b
+            
+        explicacion_error = (
+            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{c:.6f} - {(c_prev if c_prev is not None else a):.6f}| = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+        )
+        if error_abs < tol or abs(fc) < 1e-12:
+            explicacion_error += f"<span class='text-success fw-bold'>¡Criterio de parada alcanzado! (Ea &lt; Tol={tol}).</span>"
+        else:
+            explicacion_error += f"<span class='text-muted'>Aún no se alcanza la tolerancia ({tol}), se continúa a la siguiente iteración.</span>"
+
+        paso_html = f"""
+        <div class='card mb-3 shadow-sm border-info'>
+            <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
+                <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de Bisección)</span>
+                <span class='badge bg-info text-dark fs-6'>Punto Medio c = {c:.6f}</span>
+            </div>
+            <div class='card-body p-3'>
+                <p class='mb-2 small text-dark'>
+                    <b>Fórmula del Punto Medio:</b> c = (a + b) / 2 = ({a:.6f} + {b:.6f}) / 2 = <b>{c:.6f}</b>
+                </p>
+                <div class='table-responsive mb-2'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                        <thead class='table-secondary'>
+                            <tr>
+                                <th>Extremo a</th>
+                                <th>Extremo b</th>
+                                <th>Aprox c</th>
+                                <th>f(a)</th>
+                                <th>f(b)</th>
+                                <th>f(c)</th>
+                                <th>Error Abs (Ea)</th>
+                                <th>Error Rel (Er %)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{a:.6f}</td>
+                                <td>{b:.6f}</td>
+                                <td class='fw-bold text-primary'>{c:.6f}</td>
+                                <td>{fa:.6f}</td>
+                                <td>{fb:.6f}</td>
+                                <td class='fw-bold'>{fc:.6f}</td>
+                                <td class='text-danger'>{error_abs:.6f}</td>
+                                <td class='text-success'>{error_rel:.4f}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>
+                    {explicacion_cambio}
+                </div>
+                <div class='alert alert-secondary p-2 mb-0 small'>
+                    💡 {explicacion_error}
+                </div>
+            </div>
+        </div>
+        """
+        pasos.append(paso_html)
         
-        if abs(fc) < 1e-12 or (c_prev is not None and error_abs < tol):
+        if abs(fc) < 1e-12 or error_abs < tol:
             raiz = c
             break
             
-        if fa * fc < 0:
-            b, fb = c, fc
-        else:
-            a, fa = c, fc
+        a, b = a_next, b_next
         c_prev = c
         
     return tabla, pasos, raiz if raiz is not None else c
@@ -346,16 +420,19 @@ def metodo_biseccion(f, a, b, tol, max_iter):
 
 def metodo_regla_falsa(f, a, b, tol, max_iter):
     tabla, pasos = [], []
-    fa, fb = f(a), f(b)
+    fa, fb = float(f(a)), float(f(b))
     if fa * fb > 0:
-        raise ValueError("El intervalo [a, b] no contiene un cambio de signo. Regla Falsa requiere f(a)*f(b) < 0.")
+        raise ValueError(f"No hay cambio de signo en el intervalo [{a}, {b}]. f(a) = {fa:.6f}, f(b) = {fb:.6f}. Regla Falsa requiere f(a)·f(b) < 0.")
     
     c_prev, raiz = None, None
     for it in range(1, max_iter + 1):
-        c = b - (fb * (b - a)) / (fb - fa)
-        fc = f(c)
-        error_abs = abs(c - c_prev) if c_prev is not None else 0.0
-        error_rel = (error_abs / abs(c)) * 100 if c_prev is not None and c != 0 else 0.0
+        fa = float(f(a))
+        fb = float(f(b))
+        c = float(b - (fb * (b - a)) / (fb - fa))
+        fc = float(f(c))
+        
+        error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
+        error_rel = (error_abs / abs(c)) * 100.0 if (c_prev is not None and c != 0) else 100.0
         
         tabla.append({
             'it': it, 'a': a, 'b': b, 'c': c,
@@ -363,16 +440,87 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
             'error_abs': error_abs, 'error_rel': error_rel
         })
         
-        pasos.append(f"<div class='alert alert-info'>Iteración {it}: a={a:.6f}, b={b:.6f}, c={c:.6f}, f(c)={fc:.6f}</div>")
+        prod = fa * fc
+        if prod < 0:
+            explicacion_cambio = (
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &lt; 0</b>.<br>"
+                f"👉 Como el signo cambia entre a y c, la raíz se ubica en <b>[{a:.6f}, {c:.6f}]</b>. "
+                f"Se actualiza el extremo superior: <b>b toma el valor de c = {c:.6f}</b>."
+            )
+            b_next = c
+            a_next = a
+        else:
+            explicacion_cambio = (
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &gt; 0</b>.<br>"
+                f"👉 Como no hay cambio de signo en el lado izquierdo, la raíz se ubica en <b>[{c:.6f}, {b:.6f}]</b>. "
+                f"Se actualiza el extremo inferior: <b>a toma el valor de c = {c:.6f}</b>."
+            )
+            a_next = c
+            b_next = b
+            
+        explicacion_error = (
+            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{c:.6f} - {(c_prev if c_prev is not None else a):.6f}| = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+        )
+        if error_abs < tol or abs(fc) < 1e-12:
+            explicacion_error += f"<span class='text-success fw-bold'>¡Convergencia lograda! (Ea &lt; Tol={tol}).</span>"
+        else:
+            explicacion_error += f"<span class='text-muted'>Criterio no alcanzado, se continua con el intervalo ajustado.</span>"
+
+        paso_html = f"""
+        <div class='card mb-3 shadow-sm border-info'>
+            <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
+                <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Regla Falsa / Falsa Posición)</span>
+                <span class='badge bg-info text-dark fs-6'>Intersección c = {c:.6f}</span>
+            </div>
+            <div class='card-body p-3'>
+                <p class='mb-2 small text-dark'>
+                    <b>Fórmula de la Intersección Secante:</b> c = b - [f(b)·(b - a) / (f(b) - f(a))] = <b>{c:.6f}</b>
+                </p>
+                <div class='table-responsive mb-2'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                        <thead class='table-secondary'>
+                            <tr>
+                                <th>Extremo a</th>
+                                <th>Extremo b</th>
+                                <th>Intersección c</th>
+                                <th>f(a)</th>
+                                <th>f(b)</th>
+                                <th>f(c)</th>
+                                <th>Error Abs (Ea)</th>
+                                <th>Error Rel (Er %)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{a:.6f}</td>
+                                <td>{b:.6f}</td>
+                                <td class='fw-bold text-primary'>{c:.6f}</td>
+                                <td>{fa:.6f}</td>
+                                <td>{fb:.6f}</td>
+                                <td class='fw-bold'>{fc:.6f}</td>
+                                <td class='text-danger'>{error_abs:.6f}</td>
+                                <td class='text-success'>{error_rel:.4f}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>
+                    {explicacion_cambio}
+                </div>
+                <div class='alert alert-secondary p-2 mb-0 small'>
+                    💡 {explicacion_error}
+                </div>
+            </div>
+        </div>
+        """
+        pasos.append(paso_html)
         
-        if abs(fc) < 1e-12 or (c_prev is not None and error_abs < tol):
+        if abs(fc) < 1e-12 or error_abs < tol:
             raiz = c
             break
             
-        if fa * fc < 0:
-            b, fb = c, fc
-        else:
-            a, fa = c, fc
+        a, b = a_next, b_next
         c_prev = c
         
     return tabla, pasos, raiz if raiz is not None else c
@@ -380,61 +528,186 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
 
 def metodo_newton_raphson(f, df, x0, tol, max_iter):
     tabla, pasos = [], []
+    x_curr = float(x0)
     x_prev, raiz = None, None
     
     for it in range(1, max_iter + 1):
-        fx = f(x0)
-        dfx = df(x0)
+        fx = float(f(x_curr))
+        dfx = float(df(x_curr))
         if abs(dfx) < 1e-15:
-            raise ValueError("La derivada es cero. Newton-Raphson no puede continuar.")
+            raise ValueError(f"La derivada es casi cero (f'({x_curr:.4f}) = {dfx:.4e}). Newton-Raphson no puede continuar.")
             
-        x = x0 - fx / dfx
-        error_abs = abs(x - x_prev) if x_prev is not None else 0.0
-        error_rel = (error_abs / abs(x)) * 100 if x_prev is not None and x != 0 else 0.0
+        x_next = float(x_curr - (fx / dfx))
+        fn = float(f(x_next))
+        
+        error_abs = abs(x_next - x_curr)
+        error_rel = (error_abs / abs(x_next)) * 100.0 if x_next != 0 else 100.0
         
         tabla.append({
-            'it': it, 'a': x0, 'b': x0, 'c': x,
-            'fa': fx, 'fb': fx, 'fc': f(x),
+            'it': it, 'a': x_curr, 'b': dfx, 'c': x_next,
+            'fa': fx, 'fb': dfx, 'fc': fn,
             'error_abs': error_abs, 'error_rel': error_rel
         })
         
-        pasos.append(f"<div class='alert alert-info'>Iteración {it}: x0={x0:.6f}, f(x0)={fx:.6f}, x1={x:.6f}, f(x1)={f(x):.6f}</div>")
+        explicacion_formula = (
+            f"<b>Avance Tangencial:</b> x_{{{it}}} = x_{{{it-1}}} - [f(x_{{{it-1}}}) / f'(x_{{{it-1}}})] = "
+            f"{x_curr:.6f} - [({fx:.6f}) / ({dfx:.6f})] = <b>{x_next:.6f}</b>.<br>"
+            f"👉 La recta tangente calculada en x={x_curr:.6f} corta el eje X en <b>x = {x_next:.6f}</b> con un valor evaluado f(x_{{{it}}}) = {fn:.6f}."
+        )
         
-        if abs(f(x)) < 1e-12 or (x_prev is not None and error_abs < tol):
-            raiz = x
+        explicacion_error = (
+            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{x_next:.6f} - {x_curr:.6f}| = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+        )
+        if error_abs < tol or abs(fn) < 1e-12:
+            explicacion_error += f"<span class='text-success fw-bold'>¡Convergencia alcanzada! (Ea &lt; Tol={tol}).</span>"
+        else:
+            explicacion_error += f"<span class='text-muted'>Aún no converge a la tolerancia, x_{{{it}}} pasa a ser la nueva aproximación x_k.</span>"
+
+        paso_html = f"""
+        <div class='card mb-3 shadow-sm border-info'>
+            <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
+                <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de Newton-Raphson)</span>
+                <span class='badge bg-primary fs-6'>Siguiente x_{it} = {x_next:.6f}</span>
+            </div>
+            <div class='card-body p-3'>
+                <div class='table-responsive mb-2'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                        <thead class='table-secondary'>
+                            <tr>
+                                <th>x_k (Actual)</th>
+                                <th>f(x_k)</th>
+                                <th>f'(x_k) [Derivada]</th>
+                                <th>x_{it} [Nueva Aprox]</th>
+                                <th>f(x_{it})</th>
+                                <th>Error Abs (Ea)</th>
+                                <th>Error Rel (Er %)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{x_curr:.6f}</td>
+                                <td>{fx:.6f}</td>
+                                <td>{dfx:.6f}</td>
+                                <td class='fw-bold text-primary'>{x_next:.6f}</td>
+                                <td>{fn:.6f}</td>
+                                <td class='text-danger'>{error_abs:.6f}</td>
+                                <td class='text-success'>{error_rel:.4f}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>
+                    {explicacion_formula}
+                </div>
+                <div class='alert alert-secondary p-2 mb-0 small'>
+                    💡 {explicacion_error}
+                </div>
+            </div>
+        </div>
+        """
+        pasos.append(paso_html)
+        
+        if abs(fn) < 1e-12 or error_abs < tol:
+            raiz = x_next
             break
             
-        x_prev, x0 = x0, x
+        x_curr = x_next
         
-    return tabla, pasos, raiz if raiz is not None else x
+    return tabla, pasos, raiz if raiz is not None else x_curr
 
 
 def metodo_secante(f, x0, x1, tol, max_iter):
     tabla, pasos = [], []
+    x0_curr, x1_curr = float(x0), float(x1)
     raiz = None
     
     for it in range(1, max_iter + 1):
-        f0, f1 = f(x0), f(x1)
-        if abs(f1 - f0) < 1e-15:
-            raise ValueError("División por cero en el método de la secante (f(x1) - f(x0) = 0).")
+        fx0 = float(f(x0_curr))
+        fx1 = float(f(x1_curr))
+        
+        diff_y = fx1 - fx0
+        if abs(diff_y) < 1e-15:
+            raise ValueError(f"División por cero en la secante: f(x1) - f(x0) ≈ 0 en iteración {it}.")
             
-        x2 = x1 - f1 * (x1 - x0) / (f1 - f0)
-        error_abs = abs(x2 - x1)
-        error_rel = (error_abs / abs(x2)) * 100 if x2 != 0 else 0.0
+        x2 = float(x1_curr - (fx1 * (x1_curr - x0_curr)) / diff_y)
+        fx2 = float(f(x2))
+        
+        error_abs = abs(x2 - x1_curr)
+        error_rel = (error_abs / abs(x2)) * 100.0 if x2 != 0 else 100.0
         
         tabla.append({
-            'it': it, 'a': x0, 'b': x1, 'c': x2,
-            'fa': f0, 'fb': f1, 'fc': f(x2),
+            'it': it, 'a': x0_curr, 'b': x1_curr, 'c': x2,
+            'fa': fx0, 'fb': fx1, 'fc': fx2,
             'error_abs': error_abs, 'error_rel': error_rel
         })
         
-        pasos.append(f"<div class='alert alert-info'>Iteración {it}: x0={x0:.6f}, x1={x1:.6f}, x2={x2:.6f}, f(x2)={f(x2):.6f}</div>")
+        explicacion_formula = (
+            f"<b>Secante Trazada:</b> x_{{{it+1}}} = x_{{{it}}} - [f(x_{{{it}}})·(x_{{{it}}} - x_{{{it-1}}})) / (f(x_{{{it}}}) - f(x_{{{it-1}}}))]<br>"
+            f"👉 Sustituyendo: {x1_curr:.6f} - [({fx1:.6f})·({x1_curr:.6f} - {x0_curr:.6f}) / ({fx1:.6f} - ({fx0:.6f}))] = <b>{x2:.6f}</b>.<br>"
+            f"📌 La línea secante trazada entre los puntos evaluados corta el eje X en <b>x = {x2:.6f}</b> con f(x) = {fx2:.6f}."
+        )
         
-        if abs(f(x2)) < 1e-12 or error_abs < tol:
+        explicacion_error = (
+            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{x2:.6f} - {x1_curr:.6f}| = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+        )
+        if error_abs < tol or abs(fx2) < 1e-12:
+            explicacion_error += f"<span class='text-success fw-bold'>¡Criterio de parada satisfecho! (Ea &lt; Tol={tol}).</span>"
+        else:
+            explicacion_error += f"<span class='text-muted'>Se actualizan los puntos para el siguiente paso: x0 ⬅ {x1_curr:.6f}, x1 ⬅ {x2:.6f}.</span>"
+
+        paso_html = f"""
+        <div class='card mb-3 shadow-sm border-info'>
+            <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
+                <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de la Secante)</span>
+                <span class='badge bg-primary fs-6'>Nueva Aprox x_{it+1} = {x2:.6f}</span>
+            </div>
+            <div class='card-body p-3'>
+                <div class='table-responsive mb-2'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                        <thead class='table-secondary'>
+                            <tr>
+                                <th>x_{it-1}</th>
+                                <th>x_{it}</th>
+                                <th>f(x_{it-1})</th>
+                                <th>f(x_{it})</th>
+                                <th>x_{it+1} [Aprox Secante]</th>
+                                <th>f(x_{it+1})</th>
+                                <th>Error Abs (Ea)</th>
+                                <th>Error Rel (Er %)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{x0_curr:.6f}</td>
+                                <td>{x1_curr:.6f}</td>
+                                <td>{fx0:.6f}</td>
+                                <td>{fx1:.6f}</td>
+                                <td class='fw-bold text-primary'>{x2:.6f}</td>
+                                <td>{fx2:.6f}</td>
+                                <td class='text-danger'>{error_abs:.6f}</td>
+                                <td class='text-success'>{error_rel:.4f}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>
+                    {explicacion_formula}
+                </div>
+                <div class='alert alert-secondary p-2 mb-0 small'>
+                    💡 {explicacion_error}
+                </div>
+            </div>
+        </div>
+        """
+        pasos.append(paso_html)
+        
+        if abs(fx2) < 1e-12 or error_abs < tol:
             raiz = x2
             break
             
-        x0, x1 = x1, x2
+        x0_curr, x1_curr = x1_curr, x2
         
     return tabla, pasos, raiz if raiz is not None else x2
 
