@@ -69,8 +69,6 @@
             background-color: #00838f; color: white; font-weight: bold;
             padding: 4px 10px; border-radius: 8px; font-size: 0.9rem;
         }
-        
-        /* Estilos para el teclado matemático */
         .math-keyboard {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
@@ -89,6 +87,10 @@
             transition: all 0.2s; margin: 1px;
         }
         .btn-quick-dark:hover { background: #d6d8db; color: #1e2125; transform: translateY(-1px); }
+        .input-b-disabled {
+            background-color: #e9ecef !important;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -110,11 +112,11 @@
     <div class="card-custom">
         <form method="POST" action="/raices" id="form-raices">
 
-            <!-- PASO 1: ECUACIÓN Y TECLADO MATEMÁTICO -->
+            <!-- PASO 1 -->
             <div class="mb-3">
                 <span class="step-badge mb-2 d-inline-block">PASO 1: Inspección Visual</span>
                 <label class="form-label fw-bold text-secondary d-block fs-5">Ingresa la Ecuación f(x) = 0:</label>
-                
+
                 <div class="input-group mb-3">
                     <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + eˣ - 10" required>
                     <button type="button" id="btn-graficar" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
@@ -122,9 +124,7 @@
                     </button>
                 </div>
 
-                <!-- TECLADO MATEMÁTICO COMPLETO -->
                 <div class="math-keyboard mb-2">
-                    <!-- Fila 1: Trigonométricas Básicas -->
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Básicas:</small>
                         <button type="button" class="btn-quick" onclick="insertar('sen(')">sen</button>
@@ -134,24 +134,18 @@
                         <button type="button" class="btn-quick" onclick="insertar('sec(')">sec</button>
                         <button type="button" class="btn-quick" onclick="insertar('csc(')">csc</button>
                     </div>
-
-                    <!-- Fila 2: Trigonométricas Inversas -->
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Inversas:</small>
                         <button type="button" class="btn-quick" onclick="insertar('arcsen(')">arcsen</button>
                         <button type="button" class="btn-quick" onclick="insertar('arccos(')">arccos</button>
                         <button type="button" class="btn-quick" onclick="insertar('arctan(')">arctan</button>
                     </div>
-
-                    <!-- Fila 3: Hiperbólicas -->
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Hiperbólicas:</small>
                         <button type="button" class="btn-quick-dark" onclick="insertar('senh(')">senh</button>
                         <button type="button" class="btn-quick-dark" onclick="insertar('cosh(')">cosh</button>
                         <button type="button" class="btn-quick-dark" onclick="insertar('tanh(')">tanh</button>
                     </div>
-
-                    <!-- Fila 4: Logaritmos, Constantes y Símbolos -->
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Símbolos:</small>
                         <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
@@ -163,8 +157,6 @@
                         <button type="button" class="btn-quick" onclick="insertar('(')">(</button>
                         <button type="button" class="btn-quick" onclick="insertar(')')">)</button>
                     </div>
-
-                    <!-- Fila 5: Exponentes (Superíndices y variable x) -->
                     <div class="d-flex flex-wrap gap-1 align-items-center border-top pt-2 mt-2">
                         <small class="text-muted fw-bold" style="width: 110px;">Exponentes:</small>
                         <button type="button" class="btn-quick" style="background: #ffe082; border-color: #ffca28;" onclick="insertar('ˣ')">ˣ</button>
@@ -181,7 +173,7 @@
                         <button type="button" class="btn-quick" onclick="insertar('⁻')">⁻</button>
                     </div>
                 </div>
-                
+
                 <small class="text-muted d-block">
                     <b>Guía rápida:</b> Puedes escribir <b>eˣ</b> (usando el botón amarillo), <b>x⁴</b>, <b>2^x</b>, <b>(x+1)^x</b>, <b>senx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
                 </small>
@@ -203,10 +195,10 @@
                 </div>
             </div>
 
-            <!-- PASO 2: PARÁMETROS -->
+            <!-- PASO 2 -->
             <div class="mt-4 pt-3 border-top">
                 <span class="step-badge mb-3 d-inline-block">PASO 2: Selección de Intervalo y Cálculo</span>
-                
+
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-secondary">Método Numérico:</label>
@@ -225,7 +217,8 @@
 
                     <div class="col-md-3">
                         <label class="form-label fw-bold text-secondary" id="lbl-b">Extremo b (o x1):</label>
-                        <input type="text" name="b" id="input-b" class="form-control border-info form-control-lg fw-bold" value="{{ b }}" required>
+                        <!-- ✅ FIX 5: sin required, se maneja server-side -->
+                        <input type="text" name="b" id="input-b" class="form-control border-info form-control-lg fw-bold" value="{{ b }}">
                     </div>
 
                     <div class="col-md-6">
@@ -246,13 +239,14 @@
         </form>
     </div>
 
-    <!-- RESULTADOS -->
+    <!-- ERRORES -->
     {% if error %}
         <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
             {{ error }}
         </div>
     {% endif %}
 
+    <!-- RESULTADOS -->
     {% if tabla %}
     <div class="card-custom">
         <div class="d-flex align-items-center justify-content-between mb-3">
@@ -267,12 +261,27 @@
                 <thead>
                     <tr>
                         <th>it</th>
-                        <th>a / x0</th>
-                        <th>b / x1</th>
-                        <th>c (raíz)</th>
-                        <th>f(a)</th>
-                        <th>f(b)</th>
-                        <th>f(c)</th>
+                        {% if metodo == 'newton' %}
+                            <th>x<sub>k</sub></th>
+                            <th>f(x<sub>k</sub>)</th>
+                            <th>f'(x<sub>k</sub>)</th>
+                            <th>x<sub>k+1</sub></th>
+                            <th>f(x<sub>k+1</sub>)</th>
+                        {% elif metodo == 'secante' %}
+                            <th>x<sub>k-1</sub></th>
+                            <th>x<sub>k</sub></th>
+                            <th>f(x<sub>k-1</sub>)</th>
+                            <th>f(x<sub>k</sub>)</th>
+                            <th>x<sub>k+1</sub></th>
+                            <th>f(x<sub>k+1</sub>)</th>
+                        {% else %}
+                            <th>a</th>
+                            <th>b</th>
+                            <th>c (raíz)</th>
+                            <th>f(a)</th>
+                            <th>f(b)</th>
+                            <th>f(c)</th>
+                        {% endif %}
                         <th>Error Absoluto (Ea)</th>
                         <th>Error Relativo (Er %)</th>
                     </tr>
@@ -281,14 +290,31 @@
                     {% for fila in tabla %}
                     <tr>
                         <td style="text-align: center; font-weight: bold;">{{ fila.it }}</td>
-                        <td>{{ "%.6f"|format(fila.a) }}</td>
-                        <td>{{ "%.6f"|format(fila.b) }}</td>
-                        <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.c) }}</td>
-                        <td>{{ "%.6f"|format(fila.fa) }}</td>
-                        <td>{{ "%.6f"|format(fila.fb) }}</td>
-                        <td>{{ "%.6f"|format(fila.fc) }}</td>
+                        {% if metodo == 'newton' %}
+                            <td>{{ "%.6f"|format(fila.x_k) }}</td>
+                            <td>{{ "%.6f"|format(fila.fx_k) }}</td>
+                            <td>{{ "%.6f"|format(fila.dfx_k) }}</td>
+                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.x_next) }}</td>
+                            <td>{{ "%.6f"|format(fila.fx_next) }}</td>
+                        {% elif metodo == 'secante' %}
+                            <td>{{ "%.6f"|format(fila.x_k) }}</td>
+                            <td>{{ "%.6f"|format(fila.x_k1) }}</td>
+                            <td>{{ "%.6f"|format(fila.fx_k) }}</td>
+                            <td>{{ "%.6f"|format(fila.fx_k1) }}</td>
+                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.x_next) }}</td>
+                            <td>{{ "%.6f"|format(fila.fx_next) }}</td>
+                        {% else %}
+                            <td>{{ "%.6f"|format(fila.a) }}</td>
+                            <td>{{ "%.6f"|format(fila.b) }}</td>
+                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.c) }}</td>
+                            <td>{{ "%.6f"|format(fila.fa) }}</td>
+                            <td>{{ "%.6f"|format(fila.fb) }}</td>
+                            <td>{{ "%.6f"|format(fila.fc) }}</td>
+                        {% endif %}
                         <td style="color: #c62828;">{{ "%.6f"|format(fila.error_abs) }}</td>
-                        <td style="color: #2e7d32;">{{ "%.4f"|format(fila.error_rel) }}%</td>
+                        <td style="color: #2e7d32;">
+                            {% if fila.error_rel is not none %}{{ "%.4f"|format(fila.error_rel) }}%{% else %}—{% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -298,12 +324,32 @@
         <div class="mt-4 p-3 rounded-3" style="background-color: #e0f2f1; border: 2px solid #80deea;">
             <h4 class="fw-bold mb-1" style="color: #00695c;">Resumen de la Solución:</h4>
             <p class="mb-1 fs-5"><b>Se realizaron {{ tabla|length }} iteraciones.</b></p>
-            <p class="mb-1 fs-4" style="color: #00838f;"><b>La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</b></p>
-            <p class="mb-0 fs-5" style="color: #c62828;"><b>Error Absoluto Final = {{ "%.6f"|format(tabla[-1].error_abs) }}</b></p>
+            {% if raiz_hallada is not none %}
+                <p class="mb-1 fs-4" style="color: #00838f;">
+                    <b>La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</b>
+                </p>
+            {% endif %}
+            <p class="mb-2 fs-5" style="color: #c62828;">
+                <b>Error Absoluto Final = {% if tabla[-1].error_abs is not none %}{{ "%.6f"|format(tabla[-1].error_abs) }}{% else %}—{% endif %}</b>
+            </p>
+
+            {% if interpretacion %}
+                <p class="mb-1 fs-6 text-dark">
+                    <b>Función interpretada:</b>
+                    <code class="bg-light p-1 rounded">f(x) = {{ interpretacion }}</code>
+                </p>
+            {% endif %}
+            {% if derivada_tex %}
+                <p class="mb-0 fs-6 text-dark">
+                    <b>Derivada analítica:</b>
+                    <code class="bg-light p-1 rounded">f'(x) = {{ derivada_tex }}</code>
+                </p>
+            {% endif %}
         </div>
     </div>
     {% endif %}
 
+    <!-- PASOS -->
     {% if pasos %}
     <div class="card-custom">
         <div class="d-flex align-items-center gap-3 mb-3">
@@ -339,97 +385,119 @@
         const valorActual = input.value;
         input.value = valorActual.substring(0, start) + texto + valorActual.substring(end);
         input.focus();
-        // Coloca el cursor justo después de lo insertado
         input.selectionStart = input.selectionEnd = start + texto.length;
     }
 
+    // --- AJUSTE DE LABELS SEGÚN MÉTODO ---
     function ajustarLabels() {
         const m = document.getElementById('select-metodo').value;
         const lblA = document.getElementById('lbl-a');
         const lblB = document.getElementById('lbl-b');
+        const inputB = document.getElementById('input-b');
 
         if (m === 'newton') {
             lblA.innerText = 'Punto inicial (x0):';
             lblB.innerText = 'No usado en Newton';
+            inputB.classList.add('input-b-disabled');
         } else if (m === 'secante') {
             lblA.innerText = 'Punto inicial (x0):';
             lblB.innerText = 'Punto inicial (x1):';
+            inputB.classList.remove('input-b-disabled');
         } else {
             lblA.innerText = 'Extremo a:';
             lblB.innerText = 'Extremo b:';
+            inputB.classList.remove('input-b-disabled');
         }
     }
     ajustarLabels();
 
-    // --- DIBUJAR GRÁFICA ---
+    // --- RENDER GRÁFICA (Chart.js correcto) ---
     function renderChart(puntos, raizX) {
-        if (!puntos || puntos.length === 0) return;
+        const safePuntos = (Array.isArray(puntos) ? puntos : []).filter(
+            p => p && typeof p.x === 'number' && (p.y === null || typeof p.y === 'number')
+        );
+        const hasRoot = (raizX !== null && raizX !== undefined && isFinite(raizX));
 
-        const labelsX = puntos.map(p => p.x);
-        const datosY = puntos.map(p => p.y);
+        if (safePuntos.length === 0 && !hasRoot) return;
 
-        const datasets = [
-            {
-                label: 'f(x)',
-                data: datosY,
-                borderColor: '#00838f',
-                borderWidth: 3,
-                fill: false,
-                pointRadius: 0,
-                tension: 0.1
-            },
-            {
-                label: 'Eje Y = 0',
-                data: labelsX.map(() => 0),
-                borderColor: '#d32f2f',
-                borderWidth: 1.5,
-                borderDash: [6, 4],
-                pointRadius: 0,
-                fill: false
-            }
-        ];
+        const datasets = [];
 
-        if (raizX !== null && raizX !== undefined) {
+        if (safePuntos.length > 0) {
             datasets.push({
-                label: 'Raíz Calculada',
-                data: [{x: raizX, y: 0}],
-                backgroundColor: '#e94560',
-                borderColor: '#e94560',
-                pointRadius: 9,
-                pointHoverRadius: 11,
-                type: 'scatter'
+                label: 'f(x)',
+                data: safePuntos.map(p => ({ x: p.x, y: p.y })),
+                borderColor: '#00838f',
+                backgroundColor: 'rgba(0, 131, 143, 0.05)',
+                borderWidth: 3, fill: false, pointRadius: 0,
+                pointHoverRadius: 4, tension: 0.1, spanGaps: false
+            });
+            datasets.push({
+                label: 'Eje Y = 0',
+                data: safePuntos.map(p => ({ x: p.x, y: 0 })),
+                borderColor: '#d32f2f', borderWidth: 1.5,
+                borderDash: [6, 4], pointRadius: 0,
+                fill: false, spanGaps: true
             });
         }
+
+        if (hasRoot) {
+            datasets.push({
+                label: 'Raíz Calculada',
+                data: [{ x: raizX, y: 0 }],
+                backgroundColor: '#e94560', borderColor: '#e94560',
+                pointRadius: 10, pointHoverRadius: 12,
+                showLine: false
+            });
+        }
+
+        // Asegurar que y=0 siempre sea visible
+        const ys = safePuntos.map(p => p.y).filter(y => y !== null && isFinite(y));
+        let yMin = ys.length ? Math.min(...ys) : -1;
+        let yMax = ys.length ? Math.max(...ys) : 1;
+        yMin = Math.min(yMin, 0);
+        yMax = Math.max(yMax, 0);
+        const yPad = (yMax - yMin) * 0.1 || 1;
 
         const ctx = document.getElementById('graficaCurva').getContext('2d');
         if (chartInstance) chartInstance.destroy();
 
         chartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels: labelsX, datasets: datasets },
+            data: { datasets },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'nearest' },
                 scales: {
-                    x: { type: 'linear', position: 'bottom', grid: { color: '#e0e0e0' } },
-                    y: { grid: { color: '#e0e0e0' } }
-                }
+                    x: {
+                        type: 'linear', position: 'bottom',
+                        grid: { color: '#e0e0e0' },
+                        title: { display: true, text: 'x' }
+                    },
+                    y: {
+                        type: 'linear',
+                        grid: { color: '#e0e0e0' },
+                        min: yMin - yPad, max: yMax + yPad,
+                        title: { display: true, text: 'f(x)' }
+                    }
+                },
+                plugins: { legend: { position: 'top' } }
             }
         });
     }
 
-    // --- LLAMAR A PYTHON PARA GRAFICAR ---
+    // --- LLAMAR A FLASK PARA GRAFICAR ---
     async function generarGraficaManually() {
         const ecuacion = document.getElementById('input-ecuacion').value;
         const aVal = parseFloat(document.getElementById('input-a').value) || -5;
         const bVal = parseFloat(document.getElementById('input-b').value) || 5;
-        
-        let xmin = Math.min(aVal, bVal) - 3;
-        let xmax = Math.max(aVal, bVal) + 3;
+
+        const xmin = Math.min(aVal, bVal) - 3;
+        const xmax = Math.max(aVal, bVal) + 3;
 
         const btn = document.getElementById('btn-graficar');
         const msg = document.getElementById('mensaje-grafica');
-        
+
         btn.innerHTML = '⏳ Cargando...';
         btn.disabled = true;
         msg.innerText = '';
@@ -438,7 +506,7 @@
             const response = await fetch('/raices/graficar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ecuacion: ecuacion, xmin: xmin, xmax: xmax })
+                body: JSON.stringify({ ecuacion, xmin, xmax })
             });
             const data = await response.json();
 
@@ -457,10 +525,16 @@
 
     // --- CARGA INICIAL ---
     document.addEventListener('DOMContentLoaded', () => {
-        const datosServidor = JSON.parse(document.getElementById('data-grafica').textContent);
-        const raizX = JSON.parse(document.getElementById('data-raiz').textContent);
-        if (datosServidor && datosServidor.length > 0) {
-            renderChart(datosServidor, raizX);
+        try {
+            const datosServidor = JSON.parse(document.getElementById('data-grafica').textContent);
+            const raizX = JSON.parse(document.getElementById('data-raiz').textContent);
+            if (datosServidor && datosServidor.length > 0) {
+                renderChart(datosServidor, raizX);
+            } else if (raizX !== null && raizX !== undefined) {
+                renderChart([], raizX);
+            }
+        } catch (e) {
+            console.warn('No se pudo inicializar la gráfica:', e);
         }
     });
 </script>

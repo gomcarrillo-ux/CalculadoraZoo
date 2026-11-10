@@ -1,6 +1,7 @@
 # raices.py
 """
 Módulo 6: Raíces de Ecuaciones y Métodos Numéricos (Bioma Ártico / Belugas 🐳❄️)
+Versión corregida tras auditoría técnica.
 """
 import math
 import re
@@ -23,11 +24,14 @@ bp_raices = Blueprint('raices', __name__)
 # ============================================================
 # INTÉRPRETE DE ECUACIONES (tokenizador propio y seguro)
 # ============================================================
-_SUP = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻', '0123456789+-')
-_RE_SUP = re.compile(r'[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻]+')
+# ✅ FIX 2: incluir ˣ (superíndice x) en el mapeo
+_SUP = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ˣ', '0123456789+-x')
+_RE_SUP = re.compile(r'[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ˣ]+')
 _RE_NUM = re.compile(r'(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?')
 _RE_PAL = re.compile(r'[a-zñ]+')
 _RE_PREFIJO = re.compile(r'^\s*(?:y|f\s*\(\s*x\s*\))\s*=\s*')
+# ✅ FIX 4: quitar "= 0" al final si el usuario lo incluye
+_RE_SUFIJO = re.compile(r'\s*=\s*0(?:\.0+)?\s*$')
 
 _ALIAS = {
     'sin':  ['sin', 'sen', 'seno'],
@@ -61,6 +65,7 @@ _ORDEN = sorted(_NOMBRES, key=len, reverse=True)
 def _preparar(texto):
     s = str(texto).strip().lower()
     s = _RE_PREFIJO.sub('', s)
+    s = _RE_SUFIJO.sub('', s)   # ✅ FIX 4: elimina "= 0" al final
     s = _RE_SUP.sub(lambda m: '^(' + m.group().translate(_SUP) + ')', s)
     for a, b in (('−', '-'), ('–', '-'), ('×', '*'), ('·', '*'), ('⋅', '*'),
                  ('÷', '/'), ('π', 'pi'), ('√', 'sqrt'), (',', '.'),
@@ -70,6 +75,10 @@ def _preparar(texto):
 
 
 def _descomponer(palabra):
+    """Descompone una palabra en tokens conocidos.
+    ✅ FIX 3: si encuentra un carácter desconocido, lanza error explícito
+    en lugar de convertirlo silenciosamente a 'x'.
+    """
     res, i = [], 0
     while i < len(palabra):
         for nombre in _ORDEN:
@@ -78,8 +87,12 @@ def _descomponer(palabra):
                 i += len(nombre)
                 break
         else:
-            res.append(('x', 'x'))
-            i += 1
+            ch = palabra[i]
+            raise ValueError(
+                f"El símbolo '{ch}' no está permitido en la ecuación. "
+                f"Usa solo 'x', números, operadores (+, -, *, /, ^) y "
+                f"funciones como sen, cos, tan, ln, log, e, π."
+            )
     return res
 
 
@@ -110,6 +123,12 @@ def _tokenizar(s):
         elif c in '+-*/^':
             toks.append(('op', c, esp))
             i += 1
+        elif c == '=':
+            # ✅ FIX 16: mensaje claro para '='
+            raise ValueError(
+                "No incluyas el signo '=' en la ecuación. "
+                "Solo escribe el lado izquierdo de f(x) = 0."
+            )
         elif c == '(':
             toks.append(('lp', '(', esp))
             i += 1
@@ -239,16 +258,19 @@ _LOCAL_SYMPY = {
     'exp': SymExp, 'sqrt': SymSqrt, 'Abs': SymAbs,
 }
 
+
 def _a_sympy(texto):
     x = Symbol('x')
-    expr = normalizar_expresion(texto)
+    expr = normalizar_expresion(texto)  # propaga ValueError específico
     local = dict(_LOCAL_SYMPY)
     local['x'] = x
     try:
         return parse_expr(expr, local_dict=local,
                           transformations=standard_transformations + (convert_xor,))
     except Exception:
-        raise ValueError("No pude entender la ecuación. Revisa que no falte algún signo (+, −, ×).")
+        raise ValueError(
+            "No pude entender la ecuación. Revisa que no falte algún signo (+, −, ×)."
+        )
 
 
 def obtener_funciones(expr_str):
@@ -261,12 +283,25 @@ def obtener_funciones(expr_str):
 
 
 def bonito(s):
-    return s.replace('**', '^').replace('*', '·').replace('log(', 'ln(')
+    # ✅ FIX 15: no convertir log→ln (confunde log10); sí E→e
+    return str(s).replace('**', '^').replace('*', '·').replace('E', 'e')
 
 
 def parse_float_flexible(val_str, default=0.0):
+    """✅ FIX 9: fast path para números simples (evita SymPy innecesario)."""
+    if val_str is None:
+        return default
+    s = str(val_str).strip()
+    if not s:
+        return default
     try:
-        return float(_a_sympy(val_str).evalf())
+        v = float(s.replace(',', '.'))
+        return v if math.isfinite(v) else default
+    except (ValueError, TypeError):
+        pass
+    try:
+        v = float(_a_sympy(s).evalf())
+        return v if math.isfinite(v) else default
     except Exception:
         return default
 
@@ -314,52 +349,70 @@ def metodo_biseccion(f, a, b, tol, max_iter):
     tabla, pasos = [], []
     fa, fb = float(f(a)), float(f(b))
     if fa * fb > 0:
-        raise ValueError(f"No hay cambio de signo en el intervalo [{a}, {b}]. f(a) = {fa:.6f}, f(b) = {fb:.6f}. Bisección requiere f(a)·f(b) < 0.")
-    
-    c_prev, raiz = None, None
+        raise ValueError(
+            f"No hay cambio de signo en el intervalo [{a}, {b}]. "
+            f"f(a) = {fa:.6f}, f(b) = {fb:.6f}. Bisección requiere f(a)·f(b) < 0."
+        )
+
+    c_prev, raiz, c = None, None, a  # ✅ defensa: c siempre definido
     for it in range(1, max_iter + 1):
         c = (a + b) / 2.0
         fc = float(f(c))
         fa = float(f(a))
         fb = float(f(b))
-        
+
         error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
-        error_rel = (error_abs / abs(c)) * 100.0 if (c_prev is not None and c != 0) else 100.0
-        
+        # ✅ FIX 6: error_rel = None en iter 1
+        if c_prev is not None and c != 0:
+            error_rel = (error_abs / abs(c)) * 100.0
+        else:
+            error_rel = None
+        er_display = f"{error_rel:.4f}%" if error_rel is not None else "—"
+
         tabla.append({
             'it': it, 'a': a, 'b': b, 'c': c,
             'fa': fa, 'fb': fb, 'fc': fc,
             'error_abs': error_abs, 'error_rel': error_rel
         })
-        
+
         prod = fa * fc
         if prod < 0:
             explicacion_cambio = (
-                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &lt; 0</b>.<br>"
-                f"👉 Dado que el producto es <b>negativo</b>, la raíz se encuentra atrapada en la mitad izquierda <b>[{a:.6f}, {c:.6f}]</b>. "
-                f"Por lo tanto, se reemplaza el extremo superior: <b>b pasa a valer c = {c:.6f}</b>."
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = "
+                f"<b>{prod:.6f} &lt; 0</b>.<br>👉 El producto es <b>negativo</b>, la raíz "
+                f"está en <b>[{a:.6f}, {c:.6f}]</b>. <b>b pasa a valer c = {c:.6f}</b>."
             )
-            b_next = c
-            a_next = a
+            b_next, a_next = c, a
         else:
             explicacion_cambio = (
-                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &gt; 0</b>.<br>"
-                f"👉 Dado que el producto es <b>positivo</b>, ambos puntos tienen el mismo signo y la raíz está en la mitad derecha <b>[{c:.6f}, {b:.6f}]</b>. "
-                f"Por lo tanto, se reemplaza el extremo inferior: <b>a pasa a valer c = {c:.6f}</b>."
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = "
+                f"<b>{prod:.6f} &gt; 0</b>.<br>👉 El producto es <b>positivo</b>, la raíz "
+                f"está en <b>[{c:.6f}, {b:.6f}]</b>. <b>a pasa a valer c = {c:.6f}</b>."
             )
-            a_next = c
-            b_next = b
-            
+            a_next, b_next = c, b
+
+        # ✅ FIX 10: fórmula inicial correcta (|b-a|, no |c-a|)
+        if c_prev is not None:
+            ea_formula = f"|{c:.6f} - {c_prev:.6f}|"
+        else:
+            ea_formula = f"|{b:.6f} - {a:.6f}| <i>(cota inicial: ancho del intervalo)</i>"
+
         explicacion_error = (
-            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{c:.6f} - {(c_prev if c_prev is not None else a):.6f}| = <b>{error_abs:.6f}</b> "
-            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+            f"<b>Cálculo de Error:</b> Ea = {ea_formula} = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{er_display}</b>). "
         )
         if error_abs < tol or abs(fc) < 1e-12:
-            explicacion_error += f"<span class='text-success fw-bold'>¡Criterio de parada alcanzado! (Ea &lt; Tol={tol}).</span>"
+            explicacion_error += (
+                f"<span class='text-success fw-bold'>¡Criterio de parada alcanzado! "
+                f"(Ea &lt; Tol={tol}).</span>"
+            )
         else:
-            explicacion_error += f"<span class='text-muted'>Aún no se alcanza la tolerancia ({tol}), se continúa a la siguiente iteración.</span>"
+            explicacion_error += (
+                f"<span class='text-muted'>Aún no se alcanza la tolerancia ({tol}), "
+                f"se continúa a la siguiente iteración.</span>"
+            )
 
-        paso_html = f"""
+        pasos.append(f"""
         <div class='card mb-3 shadow-sm border-info'>
             <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
                 <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de Bisección)</span>
@@ -370,51 +423,40 @@ def metodo_biseccion(f, a, b, tol, max_iter):
                     <b>Fórmula del Punto Medio:</b> c = (a + b) / 2 = ({a:.6f} + {b:.6f}) / 2 = <b>{c:.6f}</b>
                 </p>
                 <div class='table-responsive mb-2'>
-                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0'
+                           style='font-size: 0.88rem; background-color: #ffffff;'>
                         <thead class='table-secondary'>
                             <tr>
-                                <th>Extremo a</th>
-                                <th>Extremo b</th>
-                                <th>Aprox c</th>
-                                <th>f(a)</th>
-                                <th>f(b)</th>
-                                <th>f(c)</th>
-                                <th>Error Abs (Ea)</th>
-                                <th>Error Rel (Er %)</th>
+                                <th>Extremo a</th><th>Extremo b</th><th>Aprox c</th>
+                                <th>f(a)</th><th>f(b)</th><th>f(c)</th>
+                                <th>Error Abs (Ea)</th><th>Error Rel (Er %)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>{a:.6f}</td>
-                                <td>{b:.6f}</td>
+                                <td>{a:.6f}</td><td>{b:.6f}</td>
                                 <td class='fw-bold text-primary'>{c:.6f}</td>
-                                <td>{fa:.6f}</td>
-                                <td>{fb:.6f}</td>
+                                <td>{fa:.6f}</td><td>{fb:.6f}</td>
                                 <td class='fw-bold'>{fc:.6f}</td>
                                 <td class='text-danger'>{error_abs:.6f}</td>
-                                <td class='text-success'>{error_rel:.4f}%</td>
+                                <td class='text-success'>{er_display}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class='alert alert-light border p-2 mb-2 small'>
-                    {explicacion_cambio}
-                </div>
-                <div class='alert alert-secondary p-2 mb-0 small'>
-                    💡 {explicacion_error}
-                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>{explicacion_cambio}</div>
+                <div class='alert alert-secondary p-2 mb-0 small'>💡 {explicacion_error}</div>
             </div>
         </div>
-        """
-        pasos.append(paso_html)
-        
+        """)
+
         if abs(fc) < 1e-12 or error_abs < tol:
             raiz = c
             break
-            
+
         a, b = a_next, b_next
         c_prev = c
-        
+
     return tabla, pasos, raiz if raiz is not None else c
 
 
@@ -422,52 +464,76 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
     tabla, pasos = [], []
     fa, fb = float(f(a)), float(f(b))
     if fa * fb > 0:
-        raise ValueError(f"No hay cambio de signo en el intervalo [{a}, {b}]. f(a) = {fa:.6f}, f(b) = {fb:.6f}. Regla Falsa requiere f(a)·f(b) < 0.")
-    
-    c_prev, raiz = None, None
+        raise ValueError(
+            f"No hay cambio de signo en el intervalo [{a}, {b}]. "
+            f"f(a) = {fa:.6f}, f(b) = {fb:.6f}. Regla Falsa requiere f(a)·f(b) < 0."
+        )
+
+    c_prev, raiz, c = None, None, a
     for it in range(1, max_iter + 1):
         fa = float(f(a))
         fb = float(f(b))
-        c = float(b - (fb * (b - a)) / (fb - fa))
+        # ✅ FIX 7: guarda contra división por cero
+        den = fb - fa
+        if abs(den) < 1e-15:
+            raise ValueError(
+                f"Regla Falsa inestable: f(b) - f(a) ≈ 0 en iteración {it}. "
+                f"Prueba Bisección o cambia el intervalo."
+            )
+        c = float(b - (fb * (b - a)) / den)
         fc = float(f(c))
-        
+
         error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
-        error_rel = (error_abs / abs(c)) * 100.0 if (c_prev is not None and c != 0) else 100.0
-        
+        # ✅ FIX 6
+        if c_prev is not None and c != 0:
+            error_rel = (error_abs / abs(c)) * 100.0
+        else:
+            error_rel = None
+        er_display = f"{error_rel:.4f}%" if error_rel is not None else "—"
+
         tabla.append({
             'it': it, 'a': a, 'b': b, 'c': c,
             'fa': fa, 'fb': fb, 'fc': fc,
             'error_abs': error_abs, 'error_rel': error_rel
         })
-        
+
         prod = fa * fc
         if prod < 0:
             explicacion_cambio = (
-                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &lt; 0</b>.<br>"
-                f"👉 Como el signo cambia entre a y c, la raíz se ubica en <b>[{a:.6f}, {c:.6f}]</b>. "
-                f"Se actualiza el extremo superior: <b>b toma el valor de c = {c:.6f}</b>."
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = "
+                f"<b>{prod:.6f} &lt; 0</b>.<br>👉 La raíz está en <b>[{a:.6f}, {c:.6f}]</b>. "
+                f"Se actualiza <b>b = c = {c:.6f}</b>."
             )
-            b_next = c
-            a_next = a
+            b_next, a_next = c, a
         else:
             explicacion_cambio = (
-                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = <b>{prod:.6f} &gt; 0</b>.<br>"
-                f"👉 Como no hay cambio de signo en el lado izquierdo, la raíz se ubica en <b>[{c:.6f}, {b:.6f}]</b>. "
-                f"Se actualiza el extremo inferior: <b>a toma el valor de c = {c:.6f}</b>."
+                f"<b>Evaluación de Signo:</b> f(a)·f(c) = ({fa:.6f})·({fc:.6f}) = "
+                f"<b>{prod:.6f} &gt; 0</b>.<br>👉 La raíz está en <b>[{c:.6f}, {b:.6f}]</b>. "
+                f"Se actualiza <b>a = c = {c:.6f}</b>."
             )
-            a_next = c
-            b_next = b
-            
+            a_next, b_next = c, b
+
+        if c_prev is not None:
+            ea_formula = f"|{c:.6f} - {c_prev:.6f}|"
+        else:
+            ea_formula = f"|{b:.6f} - {a:.6f}| <i>(cota inicial: ancho del intervalo)</i>"
+
         explicacion_error = (
-            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{c:.6f} - {(c_prev if c_prev is not None else a):.6f}| = <b>{error_abs:.6f}</b> "
-            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+            f"<b>Cálculo de Error:</b> Ea = {ea_formula} = <b>{error_abs:.6f}</b> "
+            f"(Error Relativo Er = <b>{er_display}</b>). "
         )
         if error_abs < tol or abs(fc) < 1e-12:
-            explicacion_error += f"<span class='text-success fw-bold'>¡Convergencia lograda! (Ea &lt; Tol={tol}).</span>"
+            explicacion_error += (
+                f"<span class='text-success fw-bold'>¡Convergencia lograda! "
+                f"(Ea &lt; Tol={tol}).</span>"
+            )
         else:
-            explicacion_error += f"<span class='text-muted'>Criterio no alcanzado, se continua con el intervalo ajustado.</span>"
+            explicacion_error += (
+                f"<span class='text-muted'>Criterio no alcanzado, se continúa "
+                f"con el intervalo ajustado.</span>"
+            )
 
-        paso_html = f"""
+        pasos.append(f"""
         <div class='card mb-3 shadow-sm border-info'>
             <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
                 <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Regla Falsa / Falsa Posición)</span>
@@ -475,111 +541,115 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
             </div>
             <div class='card-body p-3'>
                 <p class='mb-2 small text-dark'>
-                    <b>Fórmula de la Intersección Secante:</b> c = b - [f(b)·(b - a) / (f(b) - f(a))] = <b>{c:.6f}</b>
+                    <b>Fórmula:</b> c = b - [f(b)·(b - a) / (f(b) - f(a))] = <b>{c:.6f}</b>
                 </p>
                 <div class='table-responsive mb-2'>
-                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0'
+                           style='font-size: 0.88rem; background-color: #ffffff;'>
                         <thead class='table-secondary'>
                             <tr>
-                                <th>Extremo a</th>
-                                <th>Extremo b</th>
-                                <th>Intersección c</th>
-                                <th>f(a)</th>
-                                <th>f(b)</th>
-                                <th>f(c)</th>
-                                <th>Error Abs (Ea)</th>
-                                <th>Error Rel (Er %)</th>
+                                <th>Extremo a</th><th>Extremo b</th><th>Intersección c</th>
+                                <th>f(a)</th><th>f(b)</th><th>f(c)</th>
+                                <th>Error Abs (Ea)</th><th>Error Rel (Er %)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>{a:.6f}</td>
-                                <td>{b:.6f}</td>
+                                <td>{a:.6f}</td><td>{b:.6f}</td>
                                 <td class='fw-bold text-primary'>{c:.6f}</td>
-                                <td>{fa:.6f}</td>
-                                <td>{fb:.6f}</td>
+                                <td>{fa:.6f}</td><td>{fb:.6f}</td>
                                 <td class='fw-bold'>{fc:.6f}</td>
                                 <td class='text-danger'>{error_abs:.6f}</td>
-                                <td class='text-success'>{error_rel:.4f}%</td>
+                                <td class='text-success'>{er_display}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class='alert alert-light border p-2 mb-2 small'>
-                    {explicacion_cambio}
-                </div>
-                <div class='alert alert-secondary p-2 mb-0 small'>
-                    💡 {explicacion_error}
-                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>{explicacion_cambio}</div>
+                <div class='alert alert-secondary p-2 mb-0 small'>💡 {explicacion_error}</div>
             </div>
         </div>
-        """
-        pasos.append(paso_html)
-        
+        """)
+
         if abs(fc) < 1e-12 or error_abs < tol:
             raiz = c
             break
-            
+
         a, b = a_next, b_next
         c_prev = c
-        
+
     return tabla, pasos, raiz if raiz is not None else c
 
 
 def metodo_newton_raphson(f, df, x0, tol, max_iter):
     tabla, pasos = [], []
     x_curr = float(x0)
-    x_prev, raiz = None, None
-    
+    raiz, x_next, fn = None, x_curr, float(f(x_curr))  # defensa
+
     for it in range(1, max_iter + 1):
         fx = float(f(x_curr))
         dfx = float(df(x_curr))
         if abs(dfx) < 1e-15:
-            raise ValueError(f"La derivada es casi cero (f'({x_curr:.4f}) = {dfx:.4e}). Newton-Raphson no puede continuar.")
-            
+            raise ValueError(
+                f"La derivada es casi cero (f'({x_curr:.4f}) = {dfx:.4e}). "
+                f"Newton-Raphson no puede continuar."
+            )
+
         x_next = float(x_curr - (fx / dfx))
         fn = float(f(x_next))
-        
+
         error_abs = abs(x_next - x_curr)
-        error_rel = (error_abs / abs(x_next)) * 100.0 if x_next != 0 else 100.0
-        
+        error_rel = (error_abs / abs(x_next)) * 100.0 if x_next != 0 else None
+        er_display = f"{error_rel:.4f}%" if error_rel is not None else "—"
+
+        # ✅ FIX 4: keys específicas para Newton (no duplicar dfx en b/fb)
         tabla.append({
-            'it': it, 'a': x_curr, 'b': dfx, 'c': x_next,
-            'fa': fx, 'fb': dfx, 'fc': fn,
-            'error_abs': error_abs, 'error_rel': error_rel
+            'it': it,
+            'x_k': x_curr, 'fx_k': fx, 'dfx_k': dfx,
+            'x_next': x_next, 'fx_next': fn,
+            'error_abs': error_abs, 'error_rel': error_rel,
         })
-        
+
         explicacion_formula = (
-            f"<b>Avance Tangencial:</b> x_{{{it}}} = x_{{{it-1}}} - [f(x_{{{it-1}}}) / f'(x_{{{it-1}}})] = "
+            f"<b>Avance Tangencial:</b> x<sub>{it}</sub> = x<sub>{it-1}</sub> - "
+            f"[f(x<sub>{it-1}</sub>) / f'(x<sub>{it-1}</sub>)] = "
             f"{x_curr:.6f} - [({fx:.6f}) / ({dfx:.6f})] = <b>{x_next:.6f}</b>.<br>"
-            f"👉 La recta tangente calculada en x={x_curr:.6f} corta el eje X en <b>x = {x_next:.6f}</b> con un valor evaluado f(x_{{{it}}}) = {fn:.6f}."
+            f"👉 La recta tangente en x = {x_curr:.6f} corta el eje X en "
+            f"<b>x = {x_next:.6f}</b> con f(x<sub>{it}</sub>) = {fn:.6f}."
         )
-        
+
         explicacion_error = (
-            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{x_next:.6f} - {x_curr:.6f}| = <b>{error_abs:.6f}</b> "
-            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+            f"<b>Cálculo de Error:</b> Ea = |{x_next:.6f} - {x_curr:.6f}| = "
+            f"<b>{error_abs:.6f}</b> (Error Relativo Er = <b>{er_display}</b>). "
         )
         if error_abs < tol or abs(fn) < 1e-12:
-            explicacion_error += f"<span class='text-success fw-bold'>¡Convergencia alcanzada! (Ea &lt; Tol={tol}).</span>"
+            explicacion_error += (
+                f"<span class='text-success fw-bold'>¡Convergencia alcanzada! "
+                f"(Ea &lt; Tol={tol}).</span>"
+            )
         else:
-            explicacion_error += f"<span class='text-muted'>Aún no converge a la tolerancia, x_{{{it}}} pasa a ser la nueva aproximación x_k.</span>"
+            explicacion_error += (
+                f"<span class='text-muted'>Aún no converge, x<sub>{it}</sub> pasa "
+                f"a ser la nueva aproximación.</span>"
+            )
 
-        paso_html = f"""
+        pasos.append(f"""
         <div class='card mb-3 shadow-sm border-info'>
             <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
                 <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de Newton-Raphson)</span>
-                <span class='badge bg-primary fs-6'>Siguiente x_{it} = {x_next:.6f}</span>
+                <span class='badge bg-primary fs-6'>Siguiente x<sub>{it}</sub> = {x_next:.6f}</span>
             </div>
             <div class='card-body p-3'>
                 <div class='table-responsive mb-2'>
-                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0'
+                           style='font-size: 0.88rem; background-color: #ffffff;'>
                         <thead class='table-secondary'>
                             <tr>
-                                <th>x_k (Actual)</th>
-                                <th>f(x_k)</th>
-                                <th>f'(x_k) [Derivada]</th>
-                                <th>x_{it} [Nueva Aprox]</th>
-                                <th>f(x_{it})</th>
+                                <th>x<sub>k</sub> (Actual)</th>
+                                <th>f(x<sub>k</sub>)</th>
+                                <th>f'(x<sub>k</sub>) [Derivada]</th>
+                                <th>x<sub>{it}</sub> [Nueva Aprox]</th>
+                                <th>f(x<sub>{it}</sub>)</th>
                                 <th>Error Abs (Ea)</th>
                                 <th>Error Rel (Er %)</th>
                             </tr>
@@ -592,88 +662,101 @@ def metodo_newton_raphson(f, df, x0, tol, max_iter):
                                 <td class='fw-bold text-primary'>{x_next:.6f}</td>
                                 <td>{fn:.6f}</td>
                                 <td class='text-danger'>{error_abs:.6f}</td>
-                                <td class='text-success'>{error_rel:.4f}%</td>
+                                <td class='text-success'>{er_display}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class='alert alert-light border p-2 mb-2 small'>
-                    {explicacion_formula}
-                </div>
-                <div class='alert alert-secondary p-2 mb-0 small'>
-                    💡 {explicacion_error}
-                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>{explicacion_formula}</div>
+                <div class='alert alert-secondary p-2 mb-0 small'>💡 {explicacion_error}</div>
             </div>
         </div>
-        """
-        pasos.append(paso_html)
-        
+        """)
+
         if abs(fn) < 1e-12 or error_abs < tol:
             raiz = x_next
             break
-            
+
         x_curr = x_next
-        
-    return tabla, pasos, raiz if raiz is not None else x_curr
+
+    return tabla, pasos, raiz if raiz is not None else x_next
 
 
 def metodo_secante(f, x0, x1, tol, max_iter):
     tabla, pasos = [], []
     x0_curr, x1_curr = float(x0), float(x1)
     raiz = None
-    
+    x2 = x1_curr  # ✅ FIX 8: inicializar antes del loop
+
     for it in range(1, max_iter + 1):
         fx0 = float(f(x0_curr))
         fx1 = float(f(x1_curr))
-        
+
         diff_y = fx1 - fx0
         if abs(diff_y) < 1e-15:
-            raise ValueError(f"División por cero en la secante: f(x1) - f(x0) ≈ 0 en iteración {it}.")
-            
+            raise ValueError(
+                f"División por cero en la secante: f(x1) - f(x0) ≈ 0 "
+                f"en iteración {it}."
+            )
+
         x2 = float(x1_curr - (fx1 * (x1_curr - x0_curr)) / diff_y)
         fx2 = float(f(x2))
-        
+
         error_abs = abs(x2 - x1_curr)
-        error_rel = (error_abs / abs(x2)) * 100.0 if x2 != 0 else 100.0
-        
+        error_rel = (error_abs / abs(x2)) * 100.0 if x2 != 0 else None
+        er_display = f"{error_rel:.4f}%" if error_rel is not None else "—"
+
         tabla.append({
-            'it': it, 'a': x0_curr, 'b': x1_curr, 'c': x2,
-            'fa': fx0, 'fb': fx1, 'fc': fx2,
-            'error_abs': error_abs, 'error_rel': error_rel
+            'it': it,
+            'x_k': x0_curr, 'x_k1': x1_curr,
+            'fx_k': fx0, 'fx_k1': fx1,
+            'x_next': x2, 'fx_next': fx2,
+            'error_abs': error_abs, 'error_rel': error_rel,
         })
-        
+
+        # ✅ FIX 11: paréntesis balanceados
         explicacion_formula = (
-            f"<b>Secante Trazada:</b> x_{{{it+1}}} = x_{{{it}}} - [f(x_{{{it}}})·(x_{{{it}}} - x_{{{it-1}}})) / (f(x_{{{it}}}) - f(x_{{{it-1}}}))]<br>"
-            f"👉 Sustituyendo: {x1_curr:.6f} - [({fx1:.6f})·({x1_curr:.6f} - {x0_curr:.6f}) / ({fx1:.6f} - ({fx0:.6f}))] = <b>{x2:.6f}</b>.<br>"
-            f"📌 La línea secante trazada entre los puntos evaluados corta el eje X en <b>x = {x2:.6f}</b> con f(x) = {fx2:.6f}."
+            f"<b>Secante Trazada:</b> x<sub>{it+1}</sub> = x<sub>{it}</sub> - "
+            f"[f(x<sub>{it}</sub>)·(x<sub>{it}</sub> - x<sub>{it-1}</sub>) / "
+            f"(f(x<sub>{it}</sub>) - f(x<sub>{it-1}</sub>))]<br>"
+            f"👉 Sustituyendo: {x1_curr:.6f} - [({fx1:.6f})·({x1_curr:.6f} - "
+            f"{x0_curr:.6f}) / ({fx1:.6f} - ({fx0:.6f}))] = <b>{x2:.6f}</b>.<br>"
+            f"📌 La secante corta el eje X en <b>x = {x2:.6f}</b> con f(x) = {fx2:.6f}."
         )
-        
+
         explicacion_error = (
-            f"<b>Cálculo de Error:</b> Error Absoluto Ea = |{x2:.6f} - {x1_curr:.6f}| = <b>{error_abs:.6f}</b> "
-            f"(Error Relativo Er = <b>{error_rel:.4f}%</b>). "
+            f"<b>Cálculo de Error:</b> Ea = |{x2:.6f} - {x1_curr:.6f}| = "
+            f"<b>{error_abs:.6f}</b> (Error Relativo Er = <b>{er_display}</b>). "
         )
         if error_abs < tol or abs(fx2) < 1e-12:
-            explicacion_error += f"<span class='text-success fw-bold'>¡Criterio de parada satisfecho! (Ea &lt; Tol={tol}).</span>"
+            explicacion_error += (
+                f"<span class='text-success fw-bold'>¡Criterio de parada satisfecho! "
+                f"(Ea &lt; Tol={tol}).</span>"
+            )
         else:
-            explicacion_error += f"<span class='text-muted'>Se actualizan los puntos para el siguiente paso: x0 ⬅ {x1_curr:.6f}, x1 ⬅ {x2:.6f}.</span>"
+            explicacion_error += (
+                f"<span class='text-muted'>Se actualizan los puntos: "
+                f"x0 ⬅ {x1_curr:.6f}, x1 ⬅ {x2:.6f}.</span>"
+            )
 
-        paso_html = f"""
+        pasos.append(f"""
         <div class='card mb-3 shadow-sm border-info'>
             <div class='card-header bg-light d-flex justify-content-between align-items-center py-2'>
                 <span class='fw-bold text-dark fs-6'>📌 Iteración {it} (Método de la Secante)</span>
-                <span class='badge bg-primary fs-6'>Nueva Aprox x_{it+1} = {x2:.6f}</span>
+                <span class='badge bg-primary fs-6'>Nueva Aprox x<sub>{it+1}</sub> = {x2:.6f}</span>
             </div>
             <div class='card-body p-3'>
                 <div class='table-responsive mb-2'>
-                    <table class='table table-sm table-bordered text-center align-middle mb-0' style='font-size: 0.88rem; background-color: #ffffff;'>
+                    <table class='table table-sm table-bordered text-center align-middle mb-0'
+                           style='font-size: 0.88rem; background-color: #ffffff;'>
                         <thead class='table-secondary'>
                             <tr>
-                                <th>x_{it-1}</th>
-                                <th>x_{it}</th>
-                                <th>f(x_{it-1})</th>
-                                <th>f(x_{it})</th>
-                                <th>x_{it+1} [Aprox Secante]</th>
-                                <th>f(x_{it+1})</th>
+                                <th>x<sub>{it-1}</sub></th>
+                                <th>x<sub>{it}</sub></th>
+                                <th>f(x<sub>{it-1}</sub>)</th>
+                                <th>f(x<sub>{it}</sub>)</th>
+                                <th>x<sub>{it+1}</sub> [Aprox Secante]</th>
+                                <th>f(x<sub>{it+1}</sub>)</th>
                                 <th>Error Abs (Ea)</th>
                                 <th>Error Rel (Er %)</th>
                             </tr>
@@ -687,34 +770,38 @@ def metodo_secante(f, x0, x1, tol, max_iter):
                                 <td class='fw-bold text-primary'>{x2:.6f}</td>
                                 <td>{fx2:.6f}</td>
                                 <td class='text-danger'>{error_abs:.6f}</td>
-                                <td class='text-success'>{error_rel:.4f}%</td>
+                                <td class='text-success'>{er_display}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                <div class='alert alert-light border p-2 mb-2 small'>
-                    {explicacion_formula}
-                </div>
-                <div class='alert alert-secondary p-2 mb-0 small'>
-                    💡 {explicacion_error}
-                </div>
+                <div class='alert alert-light border p-2 mb-2 small'>{explicacion_formula}</div>
+                <div class='alert alert-secondary p-2 mb-0 small'>💡 {explicacion_error}</div>
             </div>
         </div>
-        """
-        pasos.append(paso_html)
-        
+        """)
+
         if abs(fx2) < 1e-12 or error_abs < tol:
             raiz = x2
             break
-            
+
         x0_curr, x1_curr = x1_curr, x2
-        
+
     return tabla, pasos, raiz if raiz is not None else x2
 
 
 # ============================================================
 # RUTAS FLASK
 # ============================================================
+
+def _limpiar_str(v, default):
+    """✅ FIX 5: normaliza inputs vacíos a un default, robusto para cadenas."""
+    if v is None:
+        return default
+    s = str(v).strip()
+    return s if s else default
+
+
 @bp_raices.route('/raices/graficar', methods=['POST'])
 def raices_graficar():
     datos = request.get_json(silent=True) or {}
@@ -723,8 +810,14 @@ def raices_graficar():
         xmin = parse_float_flexible(datos.get('xmin'), -5.0)
         xmax = parse_float_flexible(datos.get('xmax'), 5.0)
         if xmin >= xmax:
-            raise ValueError("En 'Ver desde / hasta', el primer número debe ser menor que el segundo.")
-        return jsonify(ok=True, puntos=generar_puntos(f, xmin, xmax), interpretacion=bonito(f_str))
+            raise ValueError(
+                "En 'Ver desde / hasta', el primer número debe ser menor que el segundo."
+            )
+        return jsonify(
+            ok=True,
+            puntos=generar_puntos(f, xmin, xmax),
+            interpretacion=bonito(f_str),
+        )
     except Exception as e:
         return jsonify(ok=False, error=str(e))
 
@@ -750,15 +843,18 @@ def raices():
             'raices.html', ecuacion=def_ecuacion, metodo=def_metodo,
             a=def_a, b=def_b, tol=def_tol, max_iter=def_max_iter,
             tabla=[], pasos=[], raiz_hallada=None, error=None,
-            puntos_grafica=puntos_iniciales, derivada_tex="", interpretacion="",
+            puntos_grafica=puntos_iniciales,
+            derivada_tex="", interpretacion="",
         )
 
-    ecuacion_input = request.form.get('ecuacion', def_ecuacion)
-    metodo = request.form.get('metodo', def_metodo)
-    a_str = request.form.get('a', def_a)
-    b_str = request.form.get('b', def_b)
-    tol_str = request.form.get('tol', def_tol)
-    max_iter_str = request.form.get('max_iter', def_max_iter)
+    # POST
+    ecuacion_input = _limpiar_str(request.form.get('ecuacion'), def_ecuacion)
+    metodo = _limpiar_str(request.form.get('metodo'), def_metodo)
+    a_str = _limpiar_str(request.form.get('a'), def_a)
+    # ✅ FIX 5: b no es obligatorio (Newton lo ignora); default si vacío
+    b_str = _limpiar_str(request.form.get('b'), def_b)
+    tol_str = _limpiar_str(request.form.get('tol'), def_tol)
+    max_iter_str = _limpiar_str(request.form.get('max_iter'), def_max_iter)
 
     tabla, pasos, puntos_grafica = [], [], []
     raiz_hallada, error = None, None
@@ -768,6 +864,8 @@ def raices():
         a_val = parse_float_flexible(a_str, 0.0)
         b_val = parse_float_flexible(b_str, a_val + 1.0)
         tol_val = parse_float_flexible(tol_str, 0.0001)
+        if tol_val <= 0:
+            raise ValueError("La tolerancia debe ser un número positivo.")
         max_iter = parse_int_flexible(max_iter_str, 20)
 
         f, df, f_str, df_str = obtener_funciones(ecuacion_input)
@@ -785,6 +883,8 @@ def raices():
             tabla, pasos, raiz_hallada = metodo_newton_raphson(f, df, a_val, tol_val, max_iter)
         elif metodo == 'secante':
             tabla, pasos, raiz_hallada = metodo_secante(f, a_val, b_val, tol_val, max_iter)
+        else:
+            raise ValueError(f"Método desconocido: {metodo}")
 
         if raiz_hallada is not None:
             raiz_hallada = float(raiz_hallada)
@@ -793,8 +893,9 @@ def raices():
         error = f"Ocurrió un error: {str(e)}"
 
     return render_template(
-        'raices.html', ecuacion=ecuacion_input, metodo=metodo, a=a_str, b=b_str,
-        tol=tol_str, max_iter=max_iter_str, tabla=tabla, pasos=pasos,
-        raiz_hallada=raiz_hallada, error=error, puntos_grafica=puntos_grafica,
+        'raices.html', ecuacion=ecuacion_input, metodo=metodo,
+        a=a_str, b=b_str, tol=tol_str, max_iter=max_iter_str,
+        tabla=tabla, pasos=pasos, raiz_hallada=raiz_hallada,
+        error=error, puntos_grafica=puntos_grafica,
         derivada_tex=derivada_tex, interpretacion=interpretacion,
     )
