@@ -1,7 +1,7 @@
 # raices.py
 """
 Módulo 6: Raíces de Ecuaciones y Métodos Numéricos (Bioma Ártico / Belugas 🐳❄️)
-Versión corregida tras auditoría técnica.
+Versión corregida tras auditoría técnica + robustez en métodos abiertos.
 """
 import math
 import re
@@ -24,13 +24,11 @@ bp_raices = Blueprint('raices', __name__)
 # ============================================================
 # INTÉRPRETE DE ECUACIONES (tokenizador propio y seguro)
 # ============================================================
-# ✅ FIX 2: incluir ˣ (superíndice x) en el mapeo
 _SUP = str.maketrans('⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ˣ', '0123456789+-x')
 _RE_SUP = re.compile(r'[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ˣ]+')
 _RE_NUM = re.compile(r'(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?')
 _RE_PAL = re.compile(r'[a-zñ]+')
 _RE_PREFIJO = re.compile(r'^\s*(?:y|f\s*\(\s*x\s*\))\s*=\s*')
-# ✅ FIX 4: quitar "= 0" al final si el usuario lo incluye
 _RE_SUFIJO = re.compile(r'\s*=\s*0(?:\.0+)?\s*$')
 
 _ALIAS = {
@@ -65,7 +63,7 @@ _ORDEN = sorted(_NOMBRES, key=len, reverse=True)
 def _preparar(texto):
     s = str(texto).strip().lower()
     s = _RE_PREFIJO.sub('', s)
-    s = _RE_SUFIJO.sub('', s)   # ✅ FIX 4: elimina "= 0" al final
+    s = _RE_SUFIJO.sub('', s)
     s = _RE_SUP.sub(lambda m: '^(' + m.group().translate(_SUP) + ')', s)
     for a, b in (('−', '-'), ('–', '-'), ('×', '*'), ('·', '*'), ('⋅', '*'),
                  ('÷', '/'), ('π', 'pi'), ('√', 'sqrt'), (',', '.'),
@@ -75,10 +73,6 @@ def _preparar(texto):
 
 
 def _descomponer(palabra):
-    """Descompone una palabra en tokens conocidos.
-    ✅ FIX 3: si encuentra un carácter desconocido, lanza error explícito
-    en lugar de convertirlo silenciosamente a 'x'.
-    """
     res, i = [], 0
     while i < len(palabra):
         for nombre in _ORDEN:
@@ -124,7 +118,6 @@ def _tokenizar(s):
             toks.append(('op', c, esp))
             i += 1
         elif c == '=':
-            # ✅ FIX 16: mensaje claro para '='
             raise ValueError(
                 "No incluyas el signo '=' en la ecuación. "
                 "Solo escribe el lado izquierdo de f(x) = 0."
@@ -261,7 +254,7 @@ _LOCAL_SYMPY = {
 
 def _a_sympy(texto):
     x = Symbol('x')
-    expr = normalizar_expresion(texto)  # propaga ValueError específico
+    expr = normalizar_expresion(texto)
     local = dict(_LOCAL_SYMPY)
     local['x'] = x
     try:
@@ -283,12 +276,10 @@ def obtener_funciones(expr_str):
 
 
 def bonito(s):
-    # ✅ FIX 15: no convertir log→ln (confunde log10); sí E→e
     return str(s).replace('**', '^').replace('*', '·').replace('E', 'e')
 
 
 def parse_float_flexible(val_str, default=0.0):
-    """✅ FIX 9: fast path para números simples (evita SymPy innecesario)."""
     if val_str is None:
         return default
     s = str(val_str).strip()
@@ -342,7 +333,7 @@ def generar_puntos(f, lo, hi, n=200):
 
 
 # ============================================================
-# MÉTODOS NUMÉRICOS (Paso a Paso Detallado y Explicativo)
+# MÉTODOS NUMÉRICOS
 # ============================================================
 
 def metodo_biseccion(f, a, b, tol, max_iter):
@@ -354,7 +345,7 @@ def metodo_biseccion(f, a, b, tol, max_iter):
             f"f(a) = {fa:.6f}, f(b) = {fb:.6f}. Bisección requiere f(a)·f(b) < 0."
         )
 
-    c_prev, raiz, c = None, None, a  # ✅ defensa: c siempre definido
+    c_prev, raiz, c = None, None, a
     for it in range(1, max_iter + 1):
         c = (a + b) / 2.0
         fc = float(f(c))
@@ -362,7 +353,6 @@ def metodo_biseccion(f, a, b, tol, max_iter):
         fb = float(f(b))
 
         error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
-        # ✅ FIX 6: error_rel = None en iter 1
         if c_prev is not None and c != 0:
             error_rel = (error_abs / abs(c)) * 100.0
         else:
@@ -391,7 +381,6 @@ def metodo_biseccion(f, a, b, tol, max_iter):
             )
             a_next, b_next = c, b
 
-        # ✅ FIX 10: fórmula inicial correcta (|b-a|, no |c-a|)
         if c_prev is not None:
             ea_formula = f"|{c:.6f} - {c_prev:.6f}|"
         else:
@@ -473,7 +462,6 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
     for it in range(1, max_iter + 1):
         fa = float(f(a))
         fb = float(f(b))
-        # ✅ FIX 7: guarda contra división por cero
         den = fb - fa
         if abs(den) < 1e-15:
             raise ValueError(
@@ -484,7 +472,6 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
         fc = float(f(c))
 
         error_abs = abs(c - c_prev) if c_prev is not None else abs(b - a)
-        # ✅ FIX 6
         if c_prev is not None and c != 0:
             error_rel = (error_abs / abs(c)) * 100.0
         else:
@@ -584,7 +571,20 @@ def metodo_regla_falsa(f, a, b, tol, max_iter):
 def metodo_newton_raphson(f, df, x0, tol, max_iter):
     tabla, pasos = [], []
     x_curr = float(x0)
-    raiz, x_next, fn = None, x_curr, float(f(x_curr))  # defensa
+
+    # ✅ MEJORA 1: validar dominio del punto inicial (mensaje claro)
+    try:
+        f_x0 = float(f(x_curr))
+    except Exception as e:
+        raise ValueError(
+            f"El punto inicial x0 = {x_curr} está fuera del dominio de f: {e}"
+        )
+    if not math.isfinite(f_x0):
+        raise ValueError(
+            f"f(x0) = {f_x0} no es un valor finito. Prueba otro punto inicial."
+        )
+
+    raiz, x_next, fn = None, x_curr, f_x0
 
     for it in range(1, max_iter + 1):
         fx = float(f(x_curr))
@@ -596,13 +596,27 @@ def metodo_newton_raphson(f, df, x0, tol, max_iter):
             )
 
         x_next = float(x_curr - (fx / dfx))
+
+        # ✅ MEJORA 2: detectar divergencia numérica (inf / nan)
+        if not math.isfinite(x_next):
+            raise ValueError(
+                f"Newton-Raphson divergió en la iteración {it}: x = {x_next}. "
+                f"Prueba otro punto inicial o cambia de método."
+            )
+
         fn = float(f(x_next))
+
+        # ✅ MEJORA 3: detectar salida del dominio de f
+        if not math.isfinite(fn):
+            raise ValueError(
+                f"f(x) no es finita en x = {x_next:.6f} (f = {fn}). "
+                f"El método salió del dominio. Prueba otro método."
+            )
 
         error_abs = abs(x_next - x_curr)
         error_rel = (error_abs / abs(x_next)) * 100.0 if x_next != 0 else None
         er_display = f"{error_rel:.4f}%" if error_rel is not None else "—"
 
-        # ✅ FIX 4: keys específicas para Newton (no duplicar dfx en b/fb)
         tabla.append({
             'it': it,
             'x_k': x_curr, 'fx_k': fx, 'dfx_k': dfx,
@@ -686,7 +700,7 @@ def metodo_secante(f, x0, x1, tol, max_iter):
     tabla, pasos = [], []
     x0_curr, x1_curr = float(x0), float(x1)
     raiz = None
-    x2 = x1_curr  # ✅ FIX 8: inicializar antes del loop
+    x2 = x1_curr
 
     for it in range(1, max_iter + 1):
         fx0 = float(f(x0_curr))
@@ -700,7 +714,22 @@ def metodo_secante(f, x0, x1, tol, max_iter):
             )
 
         x2 = float(x1_curr - (fx1 * (x1_curr - x0_curr)) / diff_y)
+
+        # ✅ MEJORA 2: detectar divergencia numérica
+        if not math.isfinite(x2):
+            raise ValueError(
+                f"Secante divergió en la iteración {it}: x = {x2}. "
+                f"Prueba otros puntos iniciales."
+            )
+
         fx2 = float(f(x2))
+
+        # ✅ MEJORA 3: detectar salida del dominio de f
+        if not math.isfinite(fx2):
+            raise ValueError(
+                f"f(x) no es finita en x = {x2:.6f}. "
+                f"El método salió del dominio. Prueba otro método."
+            )
 
         error_abs = abs(x2 - x1_curr)
         error_rel = (error_abs / abs(x2)) * 100.0 if x2 != 0 else None
@@ -714,7 +743,6 @@ def metodo_secante(f, x0, x1, tol, max_iter):
             'error_abs': error_abs, 'error_rel': error_rel,
         })
 
-        # ✅ FIX 11: paréntesis balanceados
         explicacion_formula = (
             f"<b>Secante Trazada:</b> x<sub>{it+1}</sub> = x<sub>{it}</sub> - "
             f"[f(x<sub>{it}</sub>)·(x<sub>{it}</sub> - x<sub>{it-1}</sub>) / "
@@ -795,7 +823,6 @@ def metodo_secante(f, x0, x1, tol, max_iter):
 # ============================================================
 
 def _limpiar_str(v, default):
-    """✅ FIX 5: normaliza inputs vacíos a un default, robusto para cadenas."""
     if v is None:
         return default
     s = str(v).strip()
@@ -847,11 +874,9 @@ def raices():
             derivada_tex="", interpretacion="",
         )
 
-    # POST
     ecuacion_input = _limpiar_str(request.form.get('ecuacion'), def_ecuacion)
     metodo = _limpiar_str(request.form.get('metodo'), def_metodo)
     a_str = _limpiar_str(request.form.get('a'), def_a)
-    # ✅ FIX 5: b no es obligatorio (Newton lo ignora); default si vacío
     b_str = _limpiar_str(request.form.get('b'), def_b)
     tol_str = _limpiar_str(request.form.get('tol'), def_tol)
     max_iter_str = _limpiar_str(request.form.get('max_iter'), def_max_iter)
