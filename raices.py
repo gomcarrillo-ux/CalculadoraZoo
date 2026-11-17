@@ -572,7 +572,6 @@ def metodo_newton_raphson(f, df, x0, tol, max_iter):
     tabla, pasos = [], []
     x_curr = float(x0)
 
-    # ✅ MEJORA 1: validar dominio del punto inicial (mensaje claro)
     try:
         f_x0 = float(f(x_curr))
     except Exception as e:
@@ -597,7 +596,6 @@ def metodo_newton_raphson(f, df, x0, tol, max_iter):
 
         x_next = float(x_curr - (fx / dfx))
 
-        # ✅ MEJORA 2: detectar divergencia numérica (inf / nan)
         if not math.isfinite(x_next):
             raise ValueError(
                 f"Newton-Raphson divergió en la iteración {it}: x = {x_next}. "
@@ -606,7 +604,6 @@ def metodo_newton_raphson(f, df, x0, tol, max_iter):
 
         fn = float(f(x_next))
 
-        # ✅ MEJORA 3: detectar salida del dominio de f
         if not math.isfinite(fn):
             raise ValueError(
                 f"f(x) no es finita en x = {x_next:.6f} (f = {fn}). "
@@ -715,7 +712,6 @@ def metodo_secante(f, x0, x1, tol, max_iter):
 
         x2 = float(x1_curr - (fx1 * (x1_curr - x0_curr)) / diff_y)
 
-        # ✅ MEJORA 2: detectar divergencia numérica
         if not math.isfinite(x2):
             raise ValueError(
                 f"Secante divergió en la iteración {it}: x = {x2}. "
@@ -724,7 +720,6 @@ def metodo_secante(f, x0, x1, tol, max_iter):
 
         fx2 = float(f(x2))
 
-        # ✅ MEJORA 3: detectar salida del dominio de f
         if not math.isfinite(fx2):
             raise ValueError(
                 f"f(x) no es finita en x = {x2:.6f}. "
@@ -819,6 +814,95 @@ def metodo_secante(f, x0, x1, tol, max_iter):
 
 
 # ============================================================
+# DETECTOR DE TODAS LAS RAÍCES CON SECANTE EN EL INTERVALO
+# ============================================================
+
+def _secante_puntual(f, x0, x1, tol, max_iter):
+    try:
+        x0_c, x1_c = float(x0), float(x1)
+        fx0, fx1 = float(f(x0_c)), float(f(x1_c))
+        if not (math.isfinite(fx0) and math.isfinite(fx1)):
+            return None
+        if abs(fx0) < 1e-12:
+            return x0_c
+        if abs(fx1) < 1e-12:
+            return x1_c
+        iters = max(max_iter, 60)
+        umbral_f = min(max(tol * 10, 1e-4), 1e-2)
+        for _ in range(iters):
+            diff_y = fx1 - fx0
+            if abs(diff_y) < 1e-15:
+                return None
+            x2 = x1_c - (fx1 * (x1_c - x0_c)) / diff_y
+            if not math.isfinite(x2):
+                return None
+            fx2 = float(f(x2))
+            if not math.isfinite(fx2):
+                return None
+            if abs(fx2) < 1e-12 or (abs(x2 - x1_c) < tol and abs(fx2) < umbral_f):
+                return x2
+            x0_c, x1_c = x1_c, x2
+            fx0, fx1 = fx1, fx2
+    except Exception:
+        return None
+    return None
+
+
+def detectar_raices_secante_intervalo(f, a, b, tol, max_iter, raiz_principal=None):
+    lo, hi = min(float(a), float(b)), max(float(a), float(b))
+    if hi - lo < 1e-12:
+        return []
+
+    umbral_f = min(max(tol * 10, 1e-4), 1e-2)
+    candidatos = []
+
+    if raiz_principal is not None and math.isfinite(raiz_principal):
+        if lo - 1e-6 <= raiz_principal <= hi + 1e-6:
+            try:
+                if abs(float(f(raiz_principal))) < umbral_f:
+                    candidatos.append(float(raiz_principal))
+            except Exception:
+                pass
+
+    n_sub = 80
+    paso = (hi - lo) / n_sub
+    for i in range(n_sub):
+        s0 = lo + i * paso
+        s1 = lo + (i + 1) * paso
+        r = _secante_puntual(f, s0, s1, tol, max_iter)
+        if r is not None and (lo - 1e-6 <= r <= hi + 1e-6):
+            if r < lo:
+                r = lo
+            elif r > hi:
+                r = hi
+            candidatos.append(r)
+
+    umbral_dup = max(tol * 5, 1e-4)
+    candidatos.sort()
+    unicas = []
+    for r in candidatos:
+        if not unicas:
+            unicas.append(r)
+        else:
+            if abs(r - unicas[-1]) < umbral_dup:
+                try:
+                    if abs(float(f(r))) < abs(float(f(unicas[-1]))):
+                        unicas[-1] = r
+                except Exception:
+                    pass
+            else:
+                unicas.append(r)
+
+    resultado = []
+    for r in unicas:
+        val = round(r, 6)
+        if abs(val) < 1e-12:
+            val = 0.0
+        resultado.append(val)
+    return resultado
+
+
+# ============================================================
 # RUTAS FLASK
 # ============================================================
 
@@ -869,8 +953,8 @@ def raices():
         return render_template(
             'raices.html', ecuacion=def_ecuacion, metodo=def_metodo,
             a=def_a, b=def_b, tol=def_tol, max_iter=def_max_iter,
-            tabla=[], pasos=[], raiz_hallada=None, error=None,
-            puntos_grafica=puntos_iniciales,
+            tabla=[], pasos=[], raiz_hallada=None, raices_secante=[],
+            error=None, puntos_grafica=puntos_iniciales,
             derivada_tex="", interpretacion="",
         )
 
@@ -881,7 +965,7 @@ def raices():
     tol_str = _limpiar_str(request.form.get('tol'), def_tol)
     max_iter_str = _limpiar_str(request.form.get('max_iter'), def_max_iter)
 
-    tabla, pasos, puntos_grafica = [], [], []
+    tabla, pasos, puntos_grafica, raices_secante = [], [], [], []
     raiz_hallada, error = None, None
     derivada_tex, interpretacion = "", ""
 
@@ -907,7 +991,19 @@ def raices():
         elif metodo == 'newton':
             tabla, pasos, raiz_hallada = metodo_newton_raphson(f, df, a_val, tol_val, max_iter)
         elif metodo == 'secante':
-            tabla, pasos, raiz_hallada = metodo_secante(f, a_val, b_val, tol_val, max_iter)
+            try:
+                tabla, pasos, raiz_hallada = metodo_secante(f, a_val, b_val, tol_val, max_iter)
+            except ValueError:
+                raices_secante = detectar_raices_secante_intervalo(f, a_val, b_val, tol_val, max_iter)
+                if raices_secante:
+                    r0 = raices_secante[0]
+                    delta = max(abs(b_val - a_val) * 0.05, 0.05)
+                    tabla, pasos, raiz_hallada = metodo_secante(f, r0 - delta, r0 + delta * 0.5, tol_val, max_iter)
+                else:
+                    raise
+            raices_secante = detectar_raices_secante_intervalo(
+                f, a_val, b_val, tol_val, max_iter, raiz_hallada
+            )
         else:
             raise ValueError(f"Método desconocido: {metodo}")
 
@@ -921,6 +1017,7 @@ def raices():
         'raices.html', ecuacion=ecuacion_input, metodo=metodo,
         a=a_str, b=b_str, tol=tol_str, max_iter=max_iter_str,
         tabla=tabla, pasos=pasos, raiz_hallada=raiz_hallada,
-        error=error, puntos_grafica=puntos_grafica,
-        derivada_tex=derivada_tex, interpretacion=interpretacion,
+        raices_secante=raices_secante, error=error,
+        puntos_grafica=puntos_grafica, derivada_tex=derivada_tex,
+        interpretacion=interpretacion,
     )

@@ -217,7 +217,6 @@
 
                     <div class="col-md-3">
                         <label class="form-label fw-bold text-secondary" id="lbl-b">Extremo b (o x1):</label>
-                        <!-- ✅ FIX 5: sin required, se maneja server-side -->
                         <input type="text" name="b" id="input-b" class="form-control border-info form-control-lg fw-bold" value="{{ b }}">
                     </div>
 
@@ -329,6 +328,30 @@
                     <b>La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</b>
                 </p>
             {% endif %}
+
+            {% if metodo == 'secante' %}
+                <div class="my-2 p-2 rounded-3 bg-white border border-info">
+                    <p class="mb-1 fs-5" style="color: #00695c;">
+                        <b>🔍 Raíces detectadas con Secante en el intervalo [{{ a }}, {{ b }}]:</b>
+                        <span class="badge bg-info text-dark fs-6 ms-1">
+                            {{ raices_secante|length }} {% if raices_secante|length == 1 %}raíz encontrada{% else %}raíces encontradas{% endif %}
+                        </span>
+                    </p>
+                    {% if raices_secante %}
+                        <p class="mb-0 fs-5 text-dark">
+                            <b>Valores de las raíces:</b>
+                            {% for r in raices_secante %}
+                                <span class="badge bg-danger fs-6 me-1">x<sub>{{ loop.index }}</sub> = {{ "%.6f"|format(r) }}</span>
+                            {% endfor %}
+                        </p>
+                    {% else %}
+                        <p class="mb-0 fs-6 text-muted">
+                            No se detectaron raíces dentro del intervalo [{{ a }}, {{ b }}].
+                        </p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
             <p class="mb-2 fs-5" style="color: #c62828;">
                 <b>Error Absoluto Final = {% if tabla[-1].error_abs is not none %}{{ "%.6f"|format(tabla[-1].error_abs) }}{% else %}—{% endif %}</b>
             </p>
@@ -373,6 +396,9 @@
 <script id="data-raiz" type="application/json">
     {{ (raiz_hallada if (raiz_hallada is defined and raiz_hallada is not none) else None) | tojson }}
 </script>
+<script id="data-raices-secante" type="application/json">
+    {{ (raices_secante if (raices_secante is defined and raices_secante is not none) else []) | tojson }}
+</script>
 
 <script>
     let chartInstance = null;
@@ -412,13 +438,16 @@
     ajustarLabels();
 
     // --- RENDER GRÁFICA (Chart.js correcto) ---
-    function renderChart(puntos, raizX) {
+    function renderChart(puntos, raizX, raicesSecante = []) {
         const safePuntos = (Array.isArray(puntos) ? puntos : []).filter(
             p => p && typeof p.x === 'number' && (p.y === null || typeof p.y === 'number')
         );
+        const safeSecante = (Array.isArray(raicesSecante) ? raicesSecante : []).filter(
+            r => typeof r === 'number' && isFinite(r)
+        );
         const hasRoot = (raizX !== null && raizX !== undefined && isFinite(raizX));
 
-        if (safePuntos.length === 0 && !hasRoot) return;
+        if (safePuntos.length === 0 && !hasRoot && safeSecante.length === 0) return;
 
         const datasets = [];
 
@@ -440,7 +469,25 @@
             });
         }
 
-        if (hasRoot) {
+        if (safeSecante.length > 0) {
+            datasets.push({
+                label: `Raíces Detectadas (${safeSecante.length})`,
+                data: safeSecante.map(r => ({ x: r, y: 0 })),
+                backgroundColor: '#e94560', borderColor: '#ffffff',
+                borderWidth: 2, pointRadius: 10, pointHoverRadius: 12,
+                showLine: false
+            });
+            const yaIncluida = hasRoot && safeSecante.some(r => Math.abs(r - raizX) < 1e-4);
+            if (hasRoot && !yaIncluida) {
+                datasets.push({
+                    label: 'Raíz Principal (Fuera de intervalo)',
+                    data: [{ x: raizX, y: 0 }],
+                    backgroundColor: '#ff9800', borderColor: '#ffffff',
+                    borderWidth: 2, pointRadius: 9, pointHoverRadius: 11,
+                    showLine: false
+                });
+            }
+        } else if (hasRoot) {
             datasets.push({
                 label: 'Raíz Calculada',
                 data: [{ x: raizX, y: 0 }],
@@ -511,7 +558,7 @@
             const data = await response.json();
 
             if (data.ok) {
-                renderChart(data.puntos, null);
+                renderChart(data.puntos, null, []);
             } else {
                 msg.innerText = 'Error: ' + data.error;
             }
@@ -528,10 +575,11 @@
         try {
             const datosServidor = JSON.parse(document.getElementById('data-grafica').textContent);
             const raizX = JSON.parse(document.getElementById('data-raiz').textContent);
+            const raicesSecante = JSON.parse(document.getElementById('data-raices-secante').textContent);
             if (datosServidor && datosServidor.length > 0) {
-                renderChart(datosServidor, raizX);
-            } else if (raizX !== null && raizX !== undefined) {
-                renderChart([], raizX);
+                renderChart(datosServidor, raizX, raicesSecante);
+            } else if ((raizX !== null && raizX !== undefined) || (raicesSecante && raicesSecante.length > 0)) {
+                renderChart([], raizX, raicesSecante);
             }
         } catch (e) {
             console.warn('No se pudo inicializar la gráfica:', e);
