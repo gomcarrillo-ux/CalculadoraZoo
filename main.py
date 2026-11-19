@@ -1,38 +1,31 @@
-# main.py
 import random
 from flask import Flask, render_template, request
 
-# Importación de todos los archivos / módulos
 import undertale
 from matrices import bp_matrices
 from vectores import bp_vectores
 from sistemas import bp_sistemas
 from romanos import bp_romanos
-from raices import bp_raices  # <--- NUEVO MÓDULO DE BELUGAS
+from raices import bp_raices
 
 app = Flask(__name__)
 
-# Registro de los Blueprints para activar las rutas de cada programa
 app.register_blueprint(bp_matrices)
 app.register_blueprint(bp_vectores)
 app.register_blueprint(bp_sistemas)
 app.register_blueprint(bp_romanos)
-app.register_blueprint(bp_raices)   # <--- REGISTRAR RUTA DE RAÍCES / BELUGAS
+app.register_blueprint(bp_raices)  
 
-# Ruta para el menú principal
 @app.route('/')
 @app.route('/menu')
 def menu():
-    # Selecciona dinámicamente entre ban.png, banalt.png y los banp al recargar
     imagen_banner = random.choice(['ban.png', 'banalt.png', 'banp.png', 'banp1.png', 'banp2.png', 'banp3.png'])
     return render_template('menu.html', imagen_banner=imagen_banner)
 
-# Ruta para entrar al nivel de Undertale
 @app.route('/undertale')
 def nivel_determinacion():
     return render_template('undertale.html')
 
-# Ruta para procesar el cálculo dinámico del formulario
 @app.route('/resolver_determinacion', methods=['POST'])
 def resolver_determinacion():
     try:
