@@ -1,0 +1,746 @@
+/* =====================================================================
+   CALCULADORA Z00 — Sistema de diseño compartido
+   Un mismo "esqueleto" para todos los recintos; cada uno cambia su
+   paleta mediante body[data-theme="..."].
+   Solo diseño: no altera ningún cálculo.
+   ===================================================================== */
+
+/* ---------- 1. Paletas por recinto ---------- */
+:root {
+  --font-display: 'Fredoka', 'Baloo 2', 'Segoe UI Rounded', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Nunito', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --radius-lg: 26px;
+  --radius-md: 18px;
+  --radius-sm: 12px;
+  --ease-bounce: cubic-bezier(.34, 1.56, .64, 1);
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+
+  /* Valores por defecto (menú / safari nocturno) */
+  --c1: #f6c445;
+  --c2: #1f7a52;
+  --c3: #ff8a4c;
+  --ink: #1d2b24;
+  --muted: #5d6b64;
+  --soft: #fff8e1;
+  --line: #e8dcb5;
+  --bg1: #0b2219;
+  --bg2: #133a2b;
+  --card: #ffffff;
+  --hero-ink: #fffaf0;
+  --glow: rgba(246, 196, 69, .45);
+}
+
+body[data-theme="magia"] {          /* Recinto 1 · Conejos magos */
+  --c1: #8e3fd6; --c2: #5a1d9b; --c3: #ff6fb5;
+  --ink: #2c1248; --muted: #6f5a86; --soft: #f5ecff; --line: #e2cdf7;
+  --bg1: #f6eeff; --bg2: #ffe5f3; --hero-ink: #ffffff;
+  --glow: rgba(142, 63, 214, .35);
+}
+body[data-theme="tropical"] {       /* Recinto 2 · Capibaras y nutrias */
+  --c1: #f07c13; --c2: #a94b00; --c3: #2f9e5c;
+  --ink: #3a220f; --muted: #7a5a3f; --soft: #fff2e0; --line: #fbd9ad;
+  --bg1: #fff5e4; --bg2: #e6f6df; --hero-ink: #ffffff;
+  --glow: rgba(240, 124, 19, .35);
+}
+body[data-theme="ajolote"] {        /* Recinto 3 · Ajolotes */
+  --c1: #10a3b6; --c2: #086a78; --c3: #ff78b0;
+  --ink: #0c3a41; --muted: #4f7479; --soft: #e2f8fb; --line: #b6e8ef;
+  --bg1: #def6fb; --bg2: #ffe6f1; --hero-ink: #ffffff;
+  --glow: rgba(16, 163, 182, .35);
+}
+body[data-theme="desierto"] {       /* Recinto 4 · Serpientes y camellos */
+  --c1: #c8611e; --c2: #873911; --c3: #e8a73a;
+  --ink: #3d2215; --muted: #7b5a48; --soft: #fff0dc; --line: #f0d2a8;
+  --bg1: #fdf2df; --bg2: #f6d9ae; --hero-ink: #ffffff;
+  --glow: rgba(200, 97, 30, .35);
+}
+body[data-theme="artico"] {         /* Recinto 6 · Belugas */
+  --c1: #0e8db0; --c2: #08566f; --c3: #6fd3ef;
+  --ink: #06323f; --muted: #4c6e79; --soft: #e5f6fc; --line: #bfe6f3;
+  --bg1: #ecf9ff; --bg2: #d2ecf7; --hero-ink: #ffffff;
+  --glow: rgba(14, 141, 176, .35);
+}
+body[data-theme="undertale"] {      /* Recinto 5 · Subsuelo (Determinación) */
+  --c1: #ffffff; --c2: #000000; --c3: #ff2a2a;
+  --ink: #ffffff; --muted: #bdbdbd; --soft: #0b0b0b; --line: #ffffff;
+  --bg1: #000000; --bg2: #000000; --card: #000000; --hero-ink: #ffffff;
+  --glow: rgba(255, 42, 42, .5);
+  --font-display: 'VT323', 'Courier New', monospace;
+  --font-body: 'VT323', 'Courier New', monospace;
+}
+
+/* ---------- 2. Base ---------- */
+html { scroll-behavior: smooth; }
+body.zoo {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(255,255,255,.75), transparent 60%),
+    linear-gradient(160deg, var(--bg1) 0%, var(--bg2) 100%);
+  background-color: var(--bg2);
+  overflow-x: hidden;
+}
+body.zoo h1, body.zoo h2, body.zoo h3, body.zoo h4, body.zoo h5 {
+  font-family: var(--font-display);
+  letter-spacing: .2px;
+}
+::selection { background: var(--c1); color: #fff; }
+
+/* Capa de partículas animadas (burbujas, nieve, hojas…) */
+.zoo-particles {
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.zoo-particle {
+  position: absolute;
+  top: -10vh;
+  user-select: none;
+  will-change: transform, opacity;
+  animation: zoo-fall linear infinite;
+  opacity: .0;
+}
+.zoo-particle.up { top: auto; bottom: -10vh; animation-name: zoo-rise; }
+.zoo-particle.twinkle { animation-name: zoo-twinkle; animation-timing-function: ease-in-out; top: auto; }
+@keyframes zoo-fall {
+  0%   { transform: translate3d(0, 0, 0) rotate(0); opacity: 0; }
+  10%  { opacity: var(--o, .7); }
+  90%  { opacity: var(--o, .7); }
+  100% { transform: translate3d(var(--drift, 40px), 120vh, 0) rotate(var(--spin, 360deg)); opacity: 0; }
+}
+@keyframes zoo-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(.8); opacity: 0; }
+  10%  { opacity: var(--o, .7); }
+  85%  { opacity: var(--o, .7); }
+  100% { transform: translate3d(var(--drift, 30px), -120vh, 0) scale(1.1); opacity: 0; }
+}
+@keyframes zoo-twinkle {
+  0%, 100% { transform: scale(.4) rotate(0); opacity: 0; }
+  50%      { transform: scale(1) rotate(90deg); opacity: var(--o, .8); }
+}
+
+.zoo-main { position: relative; z-index: 1; }
+
+/* ---------- 3. Barra superior ---------- */
+.zoo-topbar {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 10px clamp(14px, 3vw, 34px);
+  background: rgba(255, 255, 255, .78);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid rgba(0, 0, 0, .06);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .05);
+  animation: zoo-drop .6s var(--ease-out) both;
+}
+@keyframes zoo-drop { from { transform: translateY(-100%); } to { transform: none; } }
+
+.zoo-brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700; font-size: 1.25rem;
+  color: var(--ink); text-decoration: none; white-space: nowrap;
+}
+.zoo-brand:hover { color: var(--ink); }
+.zoo-brand .paw {
+  display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  color: #fff; font-size: 1.25rem;
+  box-shadow: 0 6px 16px var(--glow);
+  transition: transform .35s var(--ease-bounce);
+  cursor: pointer;
+}
+.zoo-brand:hover .paw { transform: rotate(-12deg) scale(1.08); }
+.zoo-brand .zz { color: var(--c2); }
+.zoo-brand .eye-o {
+  display: inline-block; position: relative;
+  width: .78em; height: .78em; margin: 0 .02em;
+  border: .12em solid currentColor; border-radius: 50%;
+  vertical-align: -.06em; background: #fff;
+}
+.zoo-brand .eye-o::after {
+  content: ""; position: absolute;
+  width: 42%; height: 42%; border-radius: 50%;
+  background: var(--ink);
+  left: 50%; top: 50%;
+  transform: translate(calc(-50% + var(--ex, 0px)), calc(-50% + var(--ey, 0px)));
+  transition: transform .08s linear;
+}
+
+.zoo-mapnav { display: flex; gap: 6px; align-items: center; }
+.zoo-mapnav a {
+  position: relative;
+  display: grid; place-items: center;
+  width: 42px; height: 42px; border-radius: 14px;
+  text-decoration: none; font-size: 1.2rem;
+  background: rgba(0, 0, 0, .04);
+  transition: transform .3s var(--ease-bounce), background .2s;
+}
+.zoo-mapnav a:hover { transform: translateY(-3px) scale(1.08); background: rgba(0, 0, 0, .08); }
+.zoo-mapnav a.active {
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 6px 16px var(--glow);
+}
+.zoo-mapnav a::after {               /* Etiqueta flotante */
+  content: attr(data-label);
+  position: absolute; top: calc(100% + 8px); left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  background: #1e1e1e; color: #fff;
+  font: 600 .72rem/1 var(--font-body);
+  padding: 6px 9px; border-radius: 8px; white-space: nowrap;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.zoo-mapnav a:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+.zoo-fia {
+  height: 38px; width: auto;
+  background: #fff; padding: 6px 12px; border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .06);
+}
+@media (max-width: 860px) { .zoo-mapnav { display: none; } }
+@media (max-width: 520px) { .zoo-fia { display: none; } }
+
+/* ---------- 4. Contenedor y animaciones de entrada ---------- */
+.zoo-wrap { max-width: 1060px; margin: 0 auto; padding: 26px clamp(12px, 3vw, 24px) 40px; }
+.zoo-wrap.wide { max-width: 1180px; }
+
+.zoo-reveal { opacity: 0; transform: translateY(26px) scale(.985); }
+.zoo-reveal.is-visible {
+  opacity: 1; transform: none;
+  transition: opacity .7s var(--ease-out), transform .7s var(--ease-out);
+  transition-delay: var(--delay, 0s);
+}
+
+/* ---------- 5. Encabezado (hero) de cada recinto ---------- */
+.zoo-hero {
+  position: relative; overflow: hidden;
+  display: grid; grid-template-columns: 150px 1fr 150px; align-items: center; gap: 12px;
+  padding: 30px 28px 26px;
+  border-radius: var(--radius-lg);
+  color: var(--hero-ink);
+  background:
+    radial-gradient(520px 220px at 50% -40%, rgba(255,255,255,.35), transparent 70%),
+    linear-gradient(135deg, var(--c1) 0%, var(--c2) 100%);
+  box-shadow: 0 22px 50px -18px var(--glow), inset 0 -6px 0 rgba(0,0,0,.08);
+  isolation: isolate;
+}
+.zoo-hero::before {                   /* textura de puntitos */
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background-image: radial-gradient(rgba(255,255,255,.18) 1.4px, transparent 1.6px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%);
+}
+.zoo-hero::after {                    /* brillo que cruza */
+  content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%; z-index: -1;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.22), transparent);
+  animation: zoo-sheen 6s ease-in-out 1s infinite;
+}
+@keyframes zoo-sheen { 0% { left: -60%; } 40%, 100% { left: 130%; } }
+
+.zoo-hero-text { text-align: center; }
+.zoo-kicker {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .2);
+  border: 1px solid rgba(255, 255, 255, .35);
+  font: 700 .78rem/1 var(--font-body); letter-spacing: 1.4px; text-transform: uppercase;
+}
+.zoo-hero h1 {
+  margin: 12px 0 6px;
+  font-size: clamp(1.8rem, 4.2vw, 2.9rem); font-weight: 700; line-height: 1.05;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, .12);
+  color: inherit;
+}
+.zoo-hero p { margin: 0 auto; max-width: 560px; opacity: .92; font-size: 1.05rem; }
+.zoo-hero-emojis { font-size: 1.6rem; letter-spacing: 6px; }
+.zoo-hero-emojis span { display: inline-block; animation: zoo-bob 2.6s ease-in-out infinite; cursor: pointer; }
+.zoo-hero-emojis span:nth-child(2) { animation-delay: .3s; }
+.zoo-hero-emojis span:nth-child(3) { animation-delay: .6s; }
+
+.zoo-mascot {
+  width: 100%; max-height: 150px; object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .22));
+  animation: zoo-float 4s ease-in-out infinite;
+  cursor: pointer;
+  transition: filter .2s;
+  user-select: none;
+}
+.zoo-mascot.right { animation-delay: -2s; }
+.zoo-mascot.round {
+  background: rgba(255,255,255,.9); border-radius: 50%; padding: 12px;
+  aspect-ratio: 1; max-width: 130px; margin: 0 auto; display: block;
+}
+.zoo-mascot.jump { animation: zoo-jump .7s var(--ease-bounce); }
+@keyframes zoo-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-10px) rotate(2deg); } }
+@keyframes zoo-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes zoo-jump {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-28px) scale(1.08, .95) rotate(-8deg); }
+  60% { transform: translateY(0) scale(1.06, .9); }
+  100% { transform: translateY(0) scale(1); }
+}
+@media (max-width: 680px) {
+  .zoo-hero { grid-template-columns: 70px 1fr 70px; padding: 22px 14px; }
+  .zoo-mascot { max-height: 80px; }
+}
+
+/* ---------- 6. Tarjetas ---------- */
+.zoo-card {
+  position: relative;
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: clamp(18px, 3vw, 30px);
+  margin-top: 22px;
+  border: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(255,255,255,.8) inset, 0 18px 40px -22px rgba(0, 0, 0, .25);
+}
+.zoo-card.accent::before {
+  content: ""; position: absolute; left: 22px; right: 22px; top: -1px; height: 5px;
+  border-radius: 0 0 6px 6px;
+  background: linear-gradient(90deg, var(--c1), var(--c3));
+}
+.zoo-card-head {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 18px;
+}
+.zoo-card-head h2, .zoo-card-head h3 {
+  margin: 0; font-weight: 700; font-size: clamp(1.25rem, 2.4vw, 1.6rem); color: var(--c2);
+}
+.zoo-card-head .sub { color: var(--muted); font-size: .95rem; margin: 2px 0 0; }
+.zoo-avatar {
+  flex: 0 0 auto;
+  width: 64px; height: 64px; border-radius: 20px;
+  display: grid; place-items: center; overflow: hidden;
+  background: var(--soft); border: 2px solid var(--line);
+}
+.zoo-avatar img { max-width: 88%; max-height: 88%; object-fit: contain; }
+.zoo-avatar.blend img { mix-blend-mode: multiply; }
+
+.zoo-label, body.zoo label.fw-bold, body.zoo .form-label {
+  font-weight: 800 !important; color: var(--c2) !important;
+  font-size: .9rem; letter-spacing: .2px; margin-bottom: 6px;
+}
+
+/* Campos de formulario de Bootstrap con el color del recinto */
+body.zoo .form-control, body.zoo .form-select {
+  border: 2px solid var(--line) !important;
+  border-radius: 14px;
+  color: var(--ink);
+  background-color: #fff;
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+body.zoo .form-control:focus, body.zoo .form-select:focus {
+  border-color: var(--c1) !important;
+  box-shadow: 0 0 0 5px var(--glow);
+}
+body.zoo .form-control[readonly] { background: var(--soft); }
+
+/* Rejillas de matrices / vectores */
+.grid-row { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; flex-wrap: nowrap; }
+.grid-row input {
+  width: 76px; height: 52px; margin: 0 4px;
+  text-align: center; font: 700 1.1rem var(--font-mono); color: var(--ink);
+  background: #fff;
+  border: 2px solid var(--line); border-radius: 14px;
+  box-shadow: 0 3px 0 var(--line);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+  animation: zoo-cell-pop .45s var(--ease-bounce) both;
+}
+.grid-row input:hover { transform: translateY(-2px); }
+.grid-row input:focus {
+  outline: none; border-color: var(--c1);
+  box-shadow: 0 0 0 5px var(--glow), 0 3px 0 var(--c1);
+  transform: translateY(-2px) scale(1.04);
+}
+.grid-row input.result-cell {
+  background: var(--soft); border-color: var(--c3) !important; box-shadow: 0 3px 0 var(--c3);
+}
+.grid-row:nth-child(2) input { animation-delay: .04s; }
+.grid-row:nth-child(3) input { animation-delay: .08s; }
+.grid-row:nth-child(4) input { animation-delay: .12s; }
+.grid-row:nth-child(5) input { animation-delay: .16s; }
+.grid-row:nth-child(n+6) input { animation-delay: .2s; }
+@keyframes zoo-cell-pop { from { opacity: 0; transform: scale(.6) translateY(8px); } to { opacity: 1; transform: none; } }
+
+.zoo-matrix-frame {               /* corchetes de matriz alrededor de la rejilla */
+  position: relative; display: inline-block; padding: 8px 14px; margin: 0 auto;
+}
+.zoo-matrix-frame::before, .zoo-matrix-frame::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 12px;
+  border: 3px solid var(--c2); opacity: .55;
+}
+.zoo-matrix-frame::before { left: 0; border-right: none; border-radius: 10px 0 0 10px; }
+.zoo-matrix-frame::after { right: 0; border-left: none; border-radius: 0 10px 10px 0; }
+.zoo-grid-wrap { text-align: center; overflow-x: auto; padding: 4px 0; }
+
+/* ---------- 7. Botones ---------- */
+.btn-zoo {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%;
+  padding: 14px 22px;
+  border: none; border-radius: 16px;
+  font: 700 1.15rem var(--font-display); letter-spacing: .3px;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 6px 0 var(--c2), 0 16px 30px -10px var(--glow);
+  transition: transform .15s, box-shadow .15s, filter .2s;
+  cursor: pointer;
+}
+.btn-zoo::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 45%; left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: skewX(-20deg);
+  transition: left .6s var(--ease-out);
+}
+.btn-zoo:hover { filter: brightness(1.06); transform: translateY(-2px); box-shadow: 0 8px 0 var(--c2), 0 20px 34px -10px var(--glow); }
+.btn-zoo:hover::before { left: 120%; }
+.btn-zoo:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--c2), 0 8px 16px -10px var(--glow); }
+.btn-zoo .ico { display: inline-block; transition: transform .35s var(--ease-bounce); }
+.btn-zoo:hover .ico { transform: rotate(-14deg) scale(1.25); }
+.btn-zoo:disabled { filter: grayscale(.4); opacity: .8; }
+
+.btn-zoo-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 16px; border-radius: 14px;
+  font-weight: 800; text-decoration: none;
+  color: var(--c2); background: #fff; border: 2px solid var(--line);
+  transition: transform .25s var(--ease-bounce), border-color .2s, box-shadow .2s;
+}
+.btn-zoo-ghost:hover { color: var(--c2); border-color: var(--c1); transform: translateX(-3px); box-shadow: 0 6px 16px -6px var(--glow); }
+
+.zoo-ripple {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: rgba(255, 255, 255, .55);
+  transform: scale(0); animation: zoo-ripple .65s ease-out forwards;
+}
+@keyframes zoo-ripple { to { transform: scale(4); opacity: 0; } }
+
+/* Pestañas (Módulo de Matrices) */
+.zoo-tabs {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px;
+  padding: 8px; margin: 22px 0 0;
+  background: rgba(255, 255, 255, .65); border: 1px solid var(--line);
+  border-radius: 20px; list-style: none;
+  backdrop-filter: blur(6px);
+}
+.zoo-tabs .nav-link {
+  width: 100%; border: none; border-radius: 14px;
+  padding: 12px 10px;
+  font-weight: 800; font-size: .92rem; color: var(--c2);
+  background: transparent;
+  transition: background .25s, color .25s, transform .25s var(--ease-bounce), box-shadow .25s;
+}
+.zoo-tabs .nav-link:hover { background: var(--soft); transform: translateY(-2px); }
+.zoo-tabs .nav-link.active {
+  color: #fff; background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 8px 18px -6px var(--glow);
+}
+.zoo-panel { animation: zoo-panel-in .45s var(--ease-out); }
+@keyframes zoo-panel-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---------- 8. Procedimiento paso a paso ---------- */
+.zoo-steps { position: relative; counter-reset: paso; }
+.zoo-steps::before {                 /* línea vertical de la línea de tiempo */
+  content: ""; position: absolute; left: 19px; top: 8px; bottom: 8px; width: 3px;
+  background: linear-gradient(var(--c1), var(--c3)); border-radius: 3px; opacity: .35;
+}
+.paso-box {
+  position: relative;
+  margin: 0 0 18px 52px;
+  padding: 16px 18px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  counter-increment: paso;
+  min-width: 0;
+}
+.paso-box::before {
+  content: counter(paso);
+  position: absolute; left: -52px; top: 12px;
+  width: 40px; height: 40px; border-radius: 14px;
+  display: grid; place-items: center;
+  font: 700 1rem var(--font-display); color: #fff;
+  background: linear-gradient(135deg, var(--c1), var(--c2));
+  box-shadow: 0 6px 14px -4px var(--glow);
+}
+.paso-box > div, .paso-box > p { overflow-x: auto; overflow-y: hidden; }
+.paso-box h5 { color: var(--c2); font-weight: 700; margin-bottom: 6px; }
+.paso-box .katex-display { margin: 10px 0; overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
+@media (max-width: 560px) {
+  .zoo-steps::before { display: none; }
+  .paso-box { margin-left: 0; padding-top: 52px; }
+  .paso-box::before { left: 14px; top: 10px; }
+}
+
+/* ---------- 9. Resultados ---------- */
+.zoo-result {
+  position: relative; overflow: hidden; text-align: center;
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, var(--c1), var(--c3), var(--c2)) border-box;
+}
+.zoo-result .zoo-result-img { max-height: 170px; width: auto; animation: zoo-float 4s ease-in-out infinite; }
+.zoo-result h2 { color: var(--c2); font-weight: 700; }
+.zoo-chip {
+  display: inline-block;
+  padding: 14px 22px; border-radius: 18px;
+  font-size: 1.35rem;
+  background: var(--soft); border: 2px solid var(--line);
+  animation: zoo-pop .6s var(--ease-bounce) both;
+}
+.zoo-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 16px; }
+.zoo-chips > *:nth-child(2) { animation-delay: .08s; }
+.zoo-chips > *:nth-child(3) { animation-delay: .16s; }
+.zoo-chips > *:nth-child(4) { animation-delay: .24s; }
+.zoo-chips > *:nth-child(n+5) { animation-delay: .32s; }
+@keyframes zoo-pop { from { opacity: 0; transform: scale(.5) translateY(14px); } to { opacity: 1; transform: none; } }
+
+.zoo-verdict {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 22px; border-radius: 999px;
+  font: 700 1.1rem var(--font-display);
+  animation: zoo-pop .6s var(--ease-bounce) both;
+  box-shadow: 0 10px 24px -12px rgba(0,0,0,.35);
+}
+.zoo-verdict.ok   { background: #e3f7e9; color: #146c34; border: 2px solid #8fd9a8; }
+.zoo-verdict.warn { background: #fff4d6; color: #7a5300; border: 2px solid #ffd36b; }
+.zoo-verdict.bad  { background: #ffe5e5; color: #a01818; border: 2px solid #f5a3a3; }
+.zoo-verdict.info { background: #e4efff; color: #1747a6; border: 2px solid #a9c5fb; }
+
+.zoo-alert {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 16px 20px; margin-top: 22px; border-radius: var(--radius-md);
+  background: #fff1f1; color: #8f1d1d; border: 2px solid #f6b4b4;
+  font-weight: 700;
+  animation: zoo-shake .5s ease-in-out;
+}
+.zoo-alert .ico { font-size: 1.4rem; line-height: 1; }
+@keyframes zoo-shake {
+  0%, 100% { transform: none; }
+  20% { transform: translateX(-8px); } 40% { transform: translateX(7px); }
+  60% { transform: translateX(-5px); } 80% { transform: translateX(3px); }
+}
+
+.zoo-hint {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 16px; border-radius: 14px;
+  background: var(--soft); border: 1px dashed var(--c1); color: var(--ink);
+  font-size: .93rem;
+}
+
+/* ---------- 10. Pantalla de carga ---------- */
+.zoo-loader {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: rgba(255, 255, 255, .95);
+  background: radial-gradient(circle at 50% 45%, rgba(255,255,255,.97), color-mix(in srgb, var(--bg1) 92%, transparent));
+  opacity: 0; visibility: hidden;
+  transition: opacity .3s, visibility .3s;
+}
+.zoo-loader.show { opacity: 1; visibility: visible; }
+.zoo-loader img { width: 190px; max-height: 210px; object-fit: contain; animation: zoo-jump 1s ease-in-out infinite; mix-blend-mode: multiply; }
+.zoo-loader p { font: 700 1.4rem var(--font-display); color: var(--c2); margin: 0; }
+.zoo-loader .bar { width: 220px; height: 10px; border-radius: 10px; background: var(--line); overflow: hidden; }
+.zoo-loader .bar i {
+  display: block; height: 100%; width: 40%; border-radius: 10px;
+  background: linear-gradient(90deg, var(--c1), var(--c3));
+  animation: zoo-bar 1.1s ease-in-out infinite;
+}
+@keyframes zoo-bar { 0% { transform: translateX(-110%); } 100% { transform: translateX(280%); } }
+
+/* ---------- 11. Pie de página ---------- */
+.zoo-footer {
+  position: relative; z-index: 1;
+  text-align: center; padding: 26px 16px 34px;
+  color: var(--muted); font-size: .9rem;
+}
+.zoo-footer .tracks { font-size: 1.1rem; letter-spacing: 10px; opacity: .45; margin-bottom: 6px; }
+.zoo-footer b { color: var(--c2); }
+
+/* ---------- 12. Huevos de pascua ---------- */
+.zoo-toast {
+  position: fixed; left: 50%; bottom: 26px; z-index: 10000;
+  transform: translate(-50%, 140%);
+  max-width: min(92vw, 520px);
+  padding: 14px 20px; border-radius: 18px;
+  background: #1c1c1c; color: #fff;
+  font: 700 1rem var(--font-body);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,.5);
+  transition: transform .5s var(--ease-bounce);
+  text-align: center;
+}
+.zoo-toast.show { transform: translate(-50%, 0); }
+
+.zoo-runner {
+  position: fixed; z-index: 9998; pointer-events: none;
+  font-size: 44px; line-height: 1;
+  left: -120px;
+  animation: zoo-run linear forwards;
+}
+.zoo-runner img { height: 1em; width: auto; display: block; }
+.zoo-runner.flip { transform: scaleX(-1); }
+@keyframes zoo-run { to { left: calc(100vw + 140px); } }
+.zoo-runner > * { animation: zoo-hop .35s ease-in-out infinite alternate; }
+@keyframes zoo-hop { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+
+.zoo-burst {
+  position: fixed; z-index: 9997; pointer-events: none;
+  font-size: 22px; line-height: 1;
+  animation: zoo-burst 1.1s var(--ease-out) forwards;
+}
+@keyframes zoo-burst {
+  0% { transform: translate(-50%, -50%) scale(.3); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1) rotate(var(--rot)); opacity: 0; }
+}
+.zoo-paw-print {
+  position: fixed; z-index: 9996; pointer-events: none;
+  font-size: 18px; opacity: .8;
+  animation: zoo-fade 1.6s ease-out forwards;
+}
+@keyframes zoo-fade { to { opacity: 0; transform: scale(.6); } }
+
+.zoo-speech {
+  position: fixed; right: 22px; bottom: 22px; z-index: 10001;
+  display: flex; align-items: flex-end; gap: 12px;
+  max-width: min(94vw, 520px);
+  animation: zoo-pop .5s var(--ease-bounce) both;
+}
+.zoo-speech img { height: 120px; image-rendering: pixelated; }
+.zoo-speech .bubble {
+  background: #000; color: #fff; border: 4px solid #fff; padding: 14px 16px;
+  font: 1.35rem/1.2 'VT323', 'Courier New', monospace;
+  min-height: 70px; width: min(70vw, 360px);
+}
+
+.zoo-shake-hard { animation: zoo-shake .45s ease-in-out; }
+
+/* ---------- 13. Accesibilidad: menos movimiento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  .zoo-particles { display: none; }
+  .zoo-reveal { opacity: 1; transform: none; }
+}
+
+/* =====================================================================
+   14. Recinto 5 · Subsuelo (estilo Undertale, en blanco y negro pixelado)
+   ===================================================================== */
+body[data-theme="undertale"] {
+  background: #000;
+  font-size: 1.3rem;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 11 10' shape-rendering='crispEdges'%3E%3Cpath fill='%23ff2a2a' d='M1 0h3v1h1v1h1V1h1V0h3v1h1v4h-1v1H9v1H8v1H7v1H6v1H5V9H4V8H3V7H2V6H1V5H0V1h1z'/%3E%3C/svg%3E") 11 9, auto;
+}
+body[data-theme="undertale"] a, body[data-theme="undertale"] button, body[data-theme="undertale"] select,
+body[data-theme="undertale"] .zoo-mascot, body[data-theme="undertale"] [data-zoo-jump] {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='26' height='26' viewBox='0 0 11 10' shape-rendering='crispEdges'%3E%3Cpath fill='%23ffcc00' d='M1 0h3v1h1v1h1V1h1V0h3v1h1v4h-1v1H9v1H8v1H7v1H6v1H5V9H4V8H3V7H2V6H1V5H0V1h1z'/%3E%3C/svg%3E") 13 10, pointer;
+}
+body[data-theme="undertale"] .zoo-topbar { background: rgba(0,0,0,.85); border-bottom: 2px solid #fff; box-shadow: none; }
+body[data-theme="undertale"] .zoo-brand { color: #fff; font-family: 'VT323', monospace; font-size: 1.6rem; }
+body[data-theme="undertale"] .zoo-brand .paw { background: #000; border: 2px solid #fff; border-radius: 0; box-shadow: none; }
+body[data-theme="undertale"] .zoo-brand .zz { color: #ffcc00; }
+body[data-theme="undertale"] .zoo-brand .eye-o { background: #000; border-radius: 0; }
+body[data-theme="undertale"] .zoo-brand .eye-o::after { background: #ff2a2a; border-radius: 0; }
+body[data-theme="undertale"] .zoo-mapnav a { background: transparent; border: 2px solid #444; border-radius: 0; }
+body[data-theme="undertale"] .zoo-mapnav a.active { background: #000; border-color: #fff; box-shadow: none; }
+body[data-theme="undertale"] .zoo-fia { border-radius: 0; }
+
+body[data-theme="undertale"] .zoo-hero {
+  background: #000; border: 4px solid #fff; border-radius: 0;
+  box-shadow: none; grid-template-columns: 1fr;
+}
+body[data-theme="undertale"] .zoo-hero::before { background-image: radial-gradient(rgba(255,255,255,.12) 1px, transparent 1.2px); }
+body[data-theme="undertale"] .zoo-hero::after { display: none; }
+body[data-theme="undertale"] .zoo-hero h1 { font-size: clamp(2.4rem, 6vw, 4rem); letter-spacing: 4px; text-shadow: none; }
+body[data-theme="undertale"] .zoo-kicker { border-radius: 0; background: transparent; border: 2px solid #ffcc00; color: #ffcc00; font: 1.2rem 'VT323', monospace; }
+body[data-theme="undertale"] .zoo-hero p { font-size: 1.35rem; color: #cfcfcf; }
+
+body[data-theme="undertale"] .zoo-card {
+  background: #000; color: #fff;
+  border: 4px solid #fff; border-radius: 0; box-shadow: none;
+}
+body[data-theme="undertale"] .zoo-card.accent::before { display: none; }
+body[data-theme="undertale"] .zoo-card-head h2,
+body[data-theme="undertale"] .zoo-card h3 { color: #fff; font-size: 1.8rem; letter-spacing: 2px; }
+
+.ut-personajes { display: flex; justify-content: space-around; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin: 18px 0 6px; }
+.ut-personajes img {
+  max-height: 120px; image-rendering: pixelated;
+  transition: transform .25s steps(3);
+}
+.ut-personajes img:hover { transform: translateY(-8px); }
+.ut-personajes img.hablando { filter: drop-shadow(0 0 8px #ffcc00); }
+
+.ut-dialogo { font-size: 1.45rem; line-height: 1.25; min-height: 3.3em; text-align: left; }
+.ut-dialogo::after { content: "▌"; animation: ut-caret .8s steps(1) infinite; color: #fff; }
+@keyframes ut-caret { 50% { opacity: 0; } }
+.ut-instrucciones p { margin: 0 0 8px; font-size: 1.3rem; text-align: left; }
+.ut-instrucciones h2 { font-size: 1.6rem; letter-spacing: 3px; margin: 0 0 10px; text-align: left; }
+
+.campo-matriz {
+  background: #000; color: #fff;
+  border: 2px solid #fff; border-radius: 0;
+  padding: 8px; margin: 5px; width: 66px;
+  text-align: center; font: 1.5rem 'VT323', 'Courier New', monospace;
+  transition: border-color .15s, box-shadow .15s;
+  animation: zoo-cell-pop .35s steps(4) both;
+}
+.campo-matriz:focus { outline: none; border-color: #ffcc00; box-shadow: 0 0 0 3px rgba(255, 204, 0, .3); }
+.campo-invalido { border-color: #ff5555 !important; animation: zoo-shake .4s; }
+.fila-matriz { display: flex; justify-content: center; }
+.fila-matriz:nth-child(2) .campo-matriz { animation-delay: .05s; }
+.fila-matriz:nth-child(3) .campo-matriz { animation-delay: .1s; }
+.fila-matriz:nth-child(4) .campo-matriz { animation-delay: .15s; }
+.fila-matriz:nth-child(n+5) .campo-matriz { animation-delay: .2s; }
+#cuadricula { overflow-x: auto; padding: 6px 0; }
+select.campo-matriz option:disabled { color: #777; }
+
+.boton-accion {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #000; color: #ff8c1a;
+  border: 3px solid #ff8c1a; border-radius: 0;
+  padding: 8px 18px; margin: 8px;
+  font: 1.55rem 'VT323', 'Courier New', monospace; letter-spacing: 2px;
+  text-decoration: none;
+  transition: color .1s, border-color .1s, transform .1s;
+}
+.boton-accion::before { content: "❤"; color: #ff2a2a; opacity: 0; width: 0; transition: opacity .1s, width .1s; overflow: hidden; }
+.boton-accion:hover { color: #ffcc00; border-color: #ffcc00; }
+.boton-accion:hover::before { opacity: 1; width: 1em; }
+.boton-accion:active { transform: translateY(2px); }
+
+.aviso { color: #ff5555; min-height: 1.4em; margin: 10px 0 0; font-size: 1.3rem; }
+.nota { font-size: 1.15rem; color: #bdbdbd; margin: 6px auto; max-width: 640px; }
+.ut-hp { display: inline-flex; align-items: center; gap: 10px; font-size: 1.3rem; }
+.ut-hp .barra { width: 120px; height: 18px; background: #c00; position: relative; }
+.ut-hp .barra i { position: absolute; inset: 0; background: #ffeb00; animation: ut-hp 2.2s steps(10) infinite alternate; }
+@keyframes ut-hp { from { right: 0; } to { right: 30%; } }
+
+.ut-registro p { font-size: 1.15rem; }
+.ut-registro table td { border-color: #fff !important; }
+
+body[data-theme="undertale"] .zoo-loader { background: #000; }
+body[data-theme="undertale"] .zoo-loader img { mix-blend-mode: normal; image-rendering: pixelated; animation: none; }
+body[data-theme="undertale"] .zoo-loader p { color: #fff; font-family: 'VT323', monospace; font-size: 2rem; }
+body[data-theme="undertale"] .zoo-loader .bar { border-radius: 0; background: #c00; }
+body[data-theme="undertale"] .zoo-loader .bar i { border-radius: 0; background: #ffeb00; }
+body[data-theme="undertale"] .zoo-footer { color: #888; font-size: 1.2rem; }
+body[data-theme="undertale"] .zoo-footer b { color: #fff; }
+body[data-theme="undertale"] .btn-zoo-ghost { background: #000; color: #fff; border: 2px solid #fff; border-radius: 0; font-family: 'VT323', monospace; font-size: 1.3rem; }
+body[data-theme="undertale"] .btn-zoo-ghost:hover { color: #ffcc00; border-color: #ffcc00; box-shadow: none; }
+body[data-theme="undertale"] h1, body[data-theme="undertale"] h2,
+body[data-theme="undertale"] h3, body[data-theme="undertale"] h4 { color: #fff; }
+
+/* Color de respaldo del documento (evita franjas blancas al hacer scroll elástico) */
+html:has(body[data-theme="menu"])      { background: #13392a; }
+html:has(body[data-theme="magia"])     { background: #ffe5f3; }
+html:has(body[data-theme="tropical"])  { background: #e6f6df; }
+html:has(body[data-theme="ajolote"])   { background: #ffe6f1; }
+html:has(body[data-theme="desierto"])  { background: #f6d9ae; }
+html:has(body[data-theme="artico"])    { background: #d2ecf7; }
+html:has(body[data-theme="undertale"]) { background: #000; }

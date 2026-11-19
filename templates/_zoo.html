@@ -1,0 +1,32 @@
+{# Macros de diseño compartidas por todos los recintos #}
+
+{% macro hero(recinto, bioma, titulo, subtitulo, img_izq, img_der, emojis='', redondo=false) %}
+<section class="zoo-hero zoo-reveal">
+    <img class="zoo-mascot {{ 'round' if redondo else '' }}" src="{{ url_for('static', filename=img_izq) }}" alt="Mascota del recinto" draggable="false">
+    <div class="zoo-hero-text">
+        <span class="zoo-kicker">Recinto {{ recinto }} · {{ bioma }}</span>
+        <h1>{{ titulo }}</h1>
+        {% if emojis %}
+            <div class="zoo-hero-emojis" aria-hidden="true">{% for e in emojis.split(' ') %}<span>{{ e }}</span>{% endfor %}</div>
+        {% endif %}
+        <p>{{ subtitulo }}</p>
+    </div>
+    <img class="zoo-mascot right {{ 'round' if redondo else '' }}" src="{{ url_for('static', filename=img_der) }}" alt="Mascota del recinto" draggable="false">
+</section>
+{% endmacro %}
+
+{% macro volver() %}
+<a href="/menu" class="btn-zoo-ghost mb-3">⬅ Volver a la entrada</a>
+{% endmacro %}
+
+{% macro card_head(titulo, img=None, sub=None, blend=false) %}
+<div class="zoo-card-head">
+    {% if img %}
+        <div class="zoo-avatar {{ 'blend' if blend else '' }}" data-zoo-jump><img src="{{ url_for('static', filename=img) }}" alt=""></div>
+    {% endif %}
+    <div>
+        <h2>{{ titulo }}</h2>
+        {% if sub %}<p class="sub">{{ sub }}</p>{% endif %}
+    </div>
+</div>
+{% endmacro %}

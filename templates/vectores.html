@@ -1,60 +1,40 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Álgebra Lineal - Módulo de Vectores</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-            onload="renderMathInElement(document.body, {delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ]});"></script>
-    <style>
-        body { background-color: #fff8e1; font-family: 'Segoe UI', sans-serif; }
-        .banner-fia { background-color: #ffffff; padding: 10px 0; border-bottom: 1px solid #ffe0b2; text-align: center; }
-        .banner-fia img { max-height: 50px; }
-        .card-module { background-color: white; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); padding: 30px; margin-top: 20px; border: 2px solid #ffe0b2; }
-        .btn-module { background-color: #f57c00; color: white; font-weight: bold; width: 100%; border-radius: 10px; border: none; }
-        .btn-module:hover { background-color: #e65100; color: white; }
-        .grid-row { display: flex; justify-content: center; margin-bottom: 10px; }
-        .grid-row input { width: 90px; height: 50px; text-align: center; border: 2px solid #ffcc80; border-radius: 8px; margin: 0 4px; font-size: 1.1rem; }
-        .result-cell { background-color: #fff3e0; font-weight: bold; border-color: #f57c00 !important; }
-        #pantalla-carga { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 248, 225, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; }
-        .paso-box { background-color: #fafafa; border-left: 5px solid #f57c00; border-radius: 10px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .katex-display { margin: 12px 0; overflow-x: auto; }
-        .badge-tipo { font-size: 1rem; padding: 10px 18px; border-radius: 10px; }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% import '_zoo.html' as zoo with context %}
+{% set tema = 'tropical' %}
+{% set modulo = 'vectores' %}
+{% set loader_img = 'capiw.gif' %}
+{% set loader_txt = 'La capibara está procesando los vectores…' %}
 
-<div class="banner-fia shadow-sm">
-    <img src="{{ url_for('static', filename='fia.png') }}" alt="FIA" class="img-fluid">
-</div>
+{% block title %}Recinto 2 · Vectores · Calculadora Z00{% endblock %}
 
-<div id="pantalla-carga">
-    <img src="{{ url_for('static', filename='capiw.gif') }}" width="220" alt="Procesando">
-    <h2 style="color: #f57c00; font-weight: bold; margin-top: 20px;">Procesando operaciones vectoriales...</h2>
-</div>
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {delimiters: [ {left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false} ]});"></script>
+{% endblock %}
 
-<div class="container mt-4 mb-5" style="max-width: 950px;">
-    <a href="/" class="btn btn-outline-secondary mb-3 fw-bold">Volver al Menú Principal</a>
+{% block styles %}
+<style>
+    .grid-row input { width: 90px; }
+    #grid-container h6 { color: var(--c2) !important; font-weight: 800; }
+    #grid-container .grid-row span { color: var(--c2) !important; }
+</style>
+{% endblock %}
 
-    <div class="text-center">
-        <div class="d-flex justify-content-center align-items-center gap-3 mb-2">
-            <img src="{{ url_for('static', filename='capii.png') }}" width="100" alt="Ilustración 1">
-            <div>
-                <h1 style="margin-bottom: 5px;">🌴 📐 🦦</h1>
-                <h1 style="color: #e65100; font-weight: bold; margin: 0;">Módulo de Vectores</h1>
-            </div>
-            <img src="{{ url_for('static', filename='capid.png') }}" width="100" alt="Ilustración 2">
-        </div>
-        <p class="text-secondary fw-bold mt-2">Combinación lineal, independencia lineal, linealidad y producto escalar</p>
-    </div>
+{% block content %}
+<div class="zoo-wrap">
+    {{ zoo.volver() }}
 
-    <div class="card-module">
-        <form method="POST" id="form-magia">
+    {{ zoo.hero('02', 'Bioma tropical', 'Recinto de Vectores',
+                'Combinación lineal, independencia lineal, linealidad y producto escalar, explicados por las capibaras.',
+                'zoo/capii.png', 'zoo/capid.png', '🌴 📐 🦦') }}
+
+    <div class="zoo-card accent zoo-reveal">
+        <form method="POST" id="form-magia" data-zoo-loader>
             <div class="mb-4">
-                <label class="fw-bold text-secondary mb-1">Operación o Propiedad a evaluar:</label>
-                <select name="metodo" id="metodo" class="form-select form-select-lg border-warning fw-bold" onchange="generarGrid()">
+                <label class="fw-bold mb-1">Operación o propiedad a evaluar:</label>
+                <select name="metodo" id="metodo" class="form-select form-select-lg fw-bold" onchange="generarGrid()">
                     <option value="comb_lineal" {% if metodo == 'comb_lineal' %}selected{% endif %}>1. ¿Es b combinación lineal de los vectores v1...vk?</option>
                     <option value="independencia" {% if metodo == 'independencia' %}selected{% endif %}>2. Independencia Lineal de {v1, v2, ..., vk}</option>
                     <option value="vec_auv" {% if metodo == 'vec_auv' %}selected{% endif %}>3. Propiedad de Linealidad: A(u + v)</option>
@@ -65,32 +45,33 @@
 
             <div class="row g-3 mb-4">
                 <div class="col-md-6" id="box-filas">
-                    <label class="fw-bold text-secondary">Dimensión del vector / Filas (m):</label>
+                    <label class="fw-bold">Dimensión del vector / Filas (m):</label>
                     <input type="number" name="filas" id="filas" class="form-control" value="{{ filas or 3 }}" min="1" max="10" onchange="generarGrid()">
                 </div>
                 <div class="col-md-6" id="box-cols">
-                    <label class="fw-bold text-secondary">Cantidad de vectores (Columnas k):</label>
+                    <label class="fw-bold">Cantidad de vectores (Columnas k):</label>
                     <input type="number" name="cols" id="cols" class="form-control" value="{{ cols or 2 }}" min="1" max="5" onchange="generarGrid()">
                 </div>
             </div>
 
-            <div id="grid-container" class="mb-4"></div>
+            <div class="zoo-grid-wrap mb-4"><div id="grid-container" class="zoo-panel"></div></div>
 
-            <button type="submit" class="btn btn-module fs-5 py-2">Calcular</button>
+            <button type="submit" class="btn-zoo"><span class="ico">🌴</span> Calcular</button>
         </form>
     </div>
 
-    {% if pasos %}
-        <div class="card p-4 mt-4 shadow-sm" style="border-radius: 15px; background-color: white;">
-            <div class="d-flex align-items-center mb-3 gap-3">
-                <img src="{{ url_for('static', filename='capiw.gif') }}" width="65" alt="Procesando">
-                <h3 style="color: #e65100; font-weight: bold; margin: 0;">Procedimiento paso a paso</h3>
-            </div>
+    {% if pasos or conclusion or resultados %}
+    <div id="zoo-resultados" data-zoo-scroll></div>
+    {% endif %}
 
+    {% if pasos %}
+        <div class="zoo-card zoo-reveal">
+            {{ zoo.card_head('Procedimiento paso a paso', 'capiw.gif', 'La capibara toma su té y resuelve con calma') }}
+            <div class="zoo-steps">
             {% for titulo, explicacion, matriz in pasos %}
                 <div class="paso-box">
-                    <h5 style="color: #ef6c00; font-weight: bold;">{{ titulo }}</h5>
-                    <p class="text-secondary mb-2">{{ explicacion | safe }}</p>
+                    <h5>{{ titulo }}</h5>
+                    <p class="mb-2" style="color: var(--muted);">{{ explicacion | safe }}</p>
                     {% if matriz %}
                         <div class="fs-5 text-center text-dark overflow-auto">
                             $${{ matriz }}$$
@@ -98,41 +79,41 @@
                     {% endif %}
                 </div>
             {% endfor %}
+            </div>
         </div>
     {% endif %}
 
     {% if conclusion %}
         <div class="text-center mt-4">
             {% if conclusion == 'combinacion_unica' %}
-                <span class="badge bg-success badge-tipo">✔ b SÍ es combinación lineal (Solución única)</span>
+                <span class="zoo-verdict ok">✔ b SÍ es combinación lineal (Solución única)</span>
             {% elif conclusion == 'combinacion_infinita' %}
-                <span class="badge bg-success badge-tipo">✔ b SÍ es combinación lineal (Infinitas combinaciones)</span>
+                <span class="zoo-verdict ok">✔ b SÍ es combinación lineal (Infinitas combinaciones)</span>
             {% elif conclusion == 'no_combinacion' %}
-                <span class="badge bg-danger badge-tipo">✘ b NO es combinación lineal</span>
+                <span class="zoo-verdict bad">✘ b NO es combinación lineal</span>
             {% elif conclusion == 'independiente' %}
-                <span class="badge bg-success badge-tipo">✔ Conjunto Linealmente Independiente (L.I.)</span>
+                <span class="zoo-verdict ok">✔ Conjunto Linealmente Independiente (L.I.)</span>
             {% elif conclusion == 'dependiente' %}
-                <span class="badge bg-warning text-dark badge-tipo">⚠ Conjunto Linealmente Dependiente (L.D.)</span>
+                <span class="zoo-verdict warn">⚠ Conjunto Linealmente Dependiente (L.D.)</span>
             {% endif %}
         </div>
     {% endif %}
 
     {% if resultados %}
-        <div class="card p-4 mt-4 text-center shadow" style="border: 3px solid #ffcc80; border-radius: 15px; background-color: white;">
-            <h2 style="color: #e65100; font-weight: bold;">Resultado Final</h2>
-            <div class="row mt-3 justify-content-center">
+        <div class="zoo-card zoo-result zoo-reveal">
+            <img src="{{ url_for('static', filename='capi.gif') }}" class="zoo-result-img mx-auto d-block mb-2" alt="Resultado" data-zoo-jump>
+            <h2>Resultado Final</h2>
+            <div class="zoo-chips">
                 {% for i in range(resultados|length) %}
-                    <div class="col-auto mb-2">
-                        <div class="p-3 fs-4 rounded-3" style="background-color: #fff3e0; border: 2px solid #ffcc80;">
-                            ${{ nombres_vars[i] }} = {{ resultados[i] }}$
-                        </div>
-                    </div>
+                    <div class="zoo-chip">${{ nombres_vars[i] }} = {{ resultados[i] }}$</div>
                 {% endfor %}
             </div>
         </div>
     {% endif %}
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     const numFilas = document.getElementById('filas');
     const numCols = document.getElementById('cols');
@@ -253,11 +234,6 @@
         }
     }
 
-    document.getElementById('form-magia').addEventListener('submit', function() {
-        document.getElementById('pantalla-carga').style.display = 'flex';
-    });
-
     generarGrid();
 </script>
-</body>
-</html>
+{% endblock %}

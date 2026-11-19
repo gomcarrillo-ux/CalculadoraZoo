@@ -1,291 +1,441 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Álgebra Lineal - Selección de Módulo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { 
-            background-color: #121224; 
-            color: white; 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0;
-            padding: 0;
-        }
-        
-        /* BANNER INSTITUCIONAL FIJO */
-        .banner-fia { 
-            background-color: #ffffff; 
-            padding: 10px 0; 
-            border-bottom: 3px solid #0f3460; 
-            text-align: center; 
-        }
-        .banner-fia img { max-height: 55px; width: auto; }
+{% extends 'base.html' %}
+{% set tema = 'menu' %}
+{% set modulo = 'menu' %}
+{% set loader_img = 'capiw.gif' %}
+{% set loader_txt = 'Abriendo el recinto…' %}
 
-        /* CONTENEDOR TRIPLE COLUMNA ADAPTABLE A TODAS LAS PANTALLAS */
-        .main-layout {
-            display: grid;
-            grid-template-columns: minmax(100px, 260px) 1fr minmax(100px, 260px);
-            gap: 15px;
-            max-width: 1500px;
-            margin: 20px auto;
-            padding: 0 10px;
-            align-items: start;
-        }
+{% block title %}Calculadora Z00 · Álgebra Lineal{% endblock %}
 
-        /* BANNERS LATERALES (ban2.png y ban1.png) */
-        .side-banner {
-            position: sticky;
-            top: 20px;
-            display: flex;
-            justify-content: center;
-        }
+{% block styles %}
+<style>
+    body[data-theme="menu"] {
+        background:
+            radial-gradient(900px 500px at 15% 0%, rgba(47, 191, 113, .22), transparent 60%),
+            radial-gradient(800px 500px at 90% 20%, rgba(246, 196, 69, .14), transparent 60%),
+            linear-gradient(180deg, #0a1f17 0%, #0f2e22 45%, #13392a 100%);
+        background-color: #13392a;
+        color: #f4efe1;
+    }
+    body[data-theme="menu"] .zoo-footer { color: rgba(244, 239, 225, .65); }
+    body[data-theme="menu"] .zoo-footer b { color: #f6c445; }
 
-        .side-banner img {
-            width: 100%;
-            max-height: 780px;
-            object-fit: contain;
-            filter: drop-shadow(0px 8px 16px rgba(0,0,0,0.6));
-            border-radius: 12px;
-        }
+    /* Distribución con los dos banners laterales */
+    .menu-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 230px) minmax(0, 1fr) minmax(0, 230px);
+        gap: 22px; max-width: 1560px; margin: 0 auto;
+        padding: 24px clamp(12px, 2.5vw, 28px) 10px;
+        align-items: start;
+    }
+    .side-banner { position: sticky; top: 90px; }
+    .side-banner img {
+        width: 100%; max-height: calc(100vh - 120px); object-fit: contain;
+        filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .5));
+        animation: zoo-float 6s ease-in-out infinite;
+    }
+    .side-banner.right img { animation-delay: -3s; }
+    @media (max-width: 1180px) {
+        .menu-layout { grid-template-columns: 1fr; }
+        .side-banner { display: none; }
+    }
+    .menu-center { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
 
-        /* COLUMNA CENTRAL */
-        .center-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+    /* --- Entrada del zoológico --- */
+    .entrada {
+        position: relative; overflow: hidden; isolation: isolate;
+        display: grid; grid-template-columns: 1.25fr 1fr; align-items: end; gap: 10px;
+        min-height: 360px;
+        padding: 34px 34px 0;
+        border-radius: 30px;
+        background:
+            radial-gradient(600px 300px at 20% 10%, rgba(246, 196, 69, .25), transparent 60%),
+            linear-gradient(160deg, #1f7a52 0%, #135c3c 55%, #0d4029 100%);
+        border: 2px solid rgba(246, 196, 69, .35);
+        box-shadow: 0 30px 60px -25px rgba(0, 0, 0, .7), inset 0 1px 0 rgba(255,255,255,.15);
+    }
+    .entrada::before {          /* Hojas de la selva en las esquinas */
+        content: "🌿"; position: absolute; font-size: 140px; left: -36px; bottom: -40px;
+        transform: rotate(18deg); opacity: .25; z-index: -1;
+    }
+    .entrada::after {
+        content: "🌴"; position: absolute; font-size: 170px; right: -40px; top: -40px;
+        transform: rotate(-12deg); opacity: .14; z-index: -1;
+    }
+    .entrada-texto { padding-bottom: 34px; }
+    .letrero {
+        display: inline-block;
+        padding: 7px 16px; border-radius: 10px;
+        background: #6b3f1d; color: #ffe8b0;
+        font: 700 .85rem var(--font-display); letter-spacing: 3px; text-transform: uppercase;
+        box-shadow: 0 4px 0 #3f230e, inset 0 1px 0 rgba(255,255,255,.2);
+        transform: rotate(-2deg);
+    }
+    .titulo-zoo {
+        margin: 18px 0 10px;
+        font: 700 clamp(2.6rem, 6vw, 4.6rem)/0.95 var(--font-display);
+        color: #fffaf0;
+        text-shadow: 0 5px 0 rgba(0, 0, 0, .25);
+    }
+    .titulo-zoo .z { color: #f6c445; }
+    .eye-big {
+        display: inline-block; position: relative;
+        width: .82em; height: .82em; margin: 0 .03em;
+        border-radius: 50%; background: #fff;
+        border: .1em solid #f6c445;
+        vertical-align: -.05em;
+        box-shadow: 0 5px 0 rgba(0, 0, 0, .25);
+        cursor: pointer;
+    }
+    .eye-big::after {
+        content: ""; position: absolute; width: 44%; height: 44%; border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #555 0 12%, #111 13%);
+        left: 50%; top: 50%;
+        transform: translate(calc(-50% + var(--ex, 0px)), calc(-50% + var(--ey, 0px)));
+    }
+    .eye-big.blink { animation: blink .25s ease-in-out; }
+    @keyframes blink { 50% { transform: scaleY(.08); } }
+    .entrada-texto p { color: rgba(255, 250, 240, .86); font-size: 1.12rem; max-width: 470px; }
+    .btn-explorar {
+        display: inline-flex; align-items: center; gap: 10px;
+        margin-top: 12px; padding: 13px 22px; border-radius: 16px;
+        background: #f6c445; color: #3a2a00; text-decoration: none;
+        font: 700 1.1rem var(--font-display);
+        box-shadow: 0 6px 0 #b98d16, 0 18px 30px -12px rgba(246, 196, 69, .6);
+        transition: transform .15s, box-shadow .15s;
+    }
+    .btn-explorar:hover { color: #3a2a00; transform: translateY(-2px); }
+    .btn-explorar:active { transform: translateY(5px); box-shadow: 0 1px 0 #b98d16; }
+    .btn-explorar .flecha { display: inline-block; animation: zoo-bob 1.6s ease-in-out infinite; }
 
-        /* BANNER SUPERIOR (DINÁMICO) */
-        .top-banner-container {
-            background: linear-gradient(145deg, #16213e, #0f3460);
-            border: 2px solid #1f4068;
-            border-radius: 16px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
+    .entrada-banner { align-self: end; text-align: center; }
+    .entrada-banner img {
+        max-height: 340px; max-width: 100%; object-fit: contain; display: block; margin: 0 auto;
+        filter: drop-shadow(0 18px 18px rgba(0, 0, 0, .45));
+    }
+    @media (max-width: 760px) {
+        .entrada { grid-template-columns: 1fr; padding: 26px 20px 0; text-align: center; }
+        .entrada-texto { padding-bottom: 6px; }
+        .entrada-texto p { margin: 0 auto; }
+        .entrada-banner img { max-height: 260px; }
+    }
 
-        .top-banner-img {
-            max-height: 280px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0px 6px 12px rgba(0,0,0,0.5));
-        }
+    /* --- Tarjeta institucional --- */
+    .info-uam { color: #1d2b24; text-align: center; }
+    .info-uam .logo-uam { width: 104px; margin-bottom: 10px; }
+    .info-uam h2 { color: #0a5a8c; font-weight: 700; margin: 0; font-size: 1.7rem; }
+    .info-uam .facultad { color: #5d6b64; font-weight: 800; margin: 2px 0 14px; }
+    .asignatura {
+        display: inline-flex; flex-wrap: wrap; justify-content: center; gap: 10px 18px; align-items: center;
+        padding: 12px 22px; border-radius: 16px;
+        background: linear-gradient(135deg, #e7f4ff, #eefbf3); border: 1px solid #bfe0f5;
+        font: 700 1.15rem var(--font-display); color: #0d4a7a;
+    }
+    .asignatura .grupo { background: #0d4a7a; color: #fff; padding: 3px 12px; border-radius: 999px; font-size: .95rem; }
+    .personas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; text-align: left; }
+    @media (max-width: 640px) { .personas { grid-template-columns: 1fr; } }
+    .persona {
+        display: flex; align-items: center; gap: 14px;
+        padding: 12px 16px; border-radius: 18px;
+        background: #f7faf8; border: 1px solid #e3ece6;
+        transition: transform .3s var(--ease-bounce), box-shadow .3s;
+    }
+    .persona:hover { transform: translateY(-4px) rotate(-.5deg); box-shadow: 0 14px 26px -14px rgba(0, 0, 0, .35); }
+    .persona img { height: 92px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,.2)); }
+    .persona .rol { font: 700 .78rem var(--font-body); letter-spacing: 1.6px; text-transform: uppercase; color: #1f7a52; }
+    .persona ul { margin: 4px 0 0; padding-left: 18px; font-weight: 700; }
+    .persona p { margin: 4px 0 0; font-weight: 700; }
 
-        /* TARJETA DE INFORMACIÓN UAM CON IMÁGENES DE AUTORES Y DOCENTE */
-        .info-card { 
-            background-color: #ffffff; 
-            color: #333333; 
-            border-radius: 15px; 
-            padding: 25px; 
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3); 
-        }
-        .logo-uam { max-width: 120px; height: auto; margin-bottom: 12px; }
+    /* --- Mapa del zoológico --- */
+    .mapa-head { text-align: center; margin: 10px 0 4px; }
+    .mapa-head h2 { font-size: clamp(1.8rem, 3.5vw, 2.4rem); color: #fffaf0; margin: 0; }
+    .mapa-head p { color: rgba(244, 239, 225, .7); margin: 4px 0 0; }
+    .recintos { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
 
-        .person-box {
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 12px 16px;
-            height: 100%;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .person-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+    .ticket {
+        --t1: #8e3fd6; --t2: #5a1d9b; --tsoft: #f5ecff;
+        position: relative; overflow: hidden;
+        display: flex; flex-direction: column;
+        border-radius: 24px; text-decoration: none;
+        background: #fff; color: #1d2b24;
+        box-shadow: 0 18px 34px -18px rgba(0, 0, 0, .7);
+        transition: transform .35s var(--ease-bounce), box-shadow .35s;
+    }
+    .ticket:hover { transform: translateY(-8px) rotate(-.6deg); box-shadow: 0 28px 46px -18px rgba(0, 0, 0, .8); color: #1d2b24; }
+    .ticket-top {
+        position: relative; height: 128px;
+        display: grid; place-items: center;
+        background:
+            radial-gradient(circle at 30% 20%, rgba(255,255,255,.35), transparent 55%),
+            linear-gradient(135deg, var(--t1), var(--t2));
+    }
+    .ticket-top .emoji { font-size: 3.4rem; transition: transform .45s var(--ease-bounce); filter: drop-shadow(0 6px 6px rgba(0,0,0,.25)); }
+    .ticket:hover .ticket-top .emoji { transform: scale(1.18) rotate(-6deg); }
+    .ticket-num {
+        position: absolute; top: 12px; left: 12px;
+        padding: 4px 10px; border-radius: 999px;
+        background: rgba(255, 255, 255, .25); color: #fff;
+        font: 700 .72rem var(--font-body); letter-spacing: 1.4px; text-transform: uppercase;
+    }
+    .ticket-body {
+        position: relative; flex: 1;
+        padding: 18px 18px 16px;
+        border-top: 3px dashed rgba(0, 0, 0, .12);
+    }
+    .ticket-body::before, .ticket-body::after {   /* muescas de boleto */
+        content: ""; position: absolute; top: -13px; width: 24px; height: 24px; border-radius: 50%;
+        background: #0f2e22;
+    }
+    .ticket-body::before { left: -12px; }
+    .ticket-body::after { right: -12px; }
+    .ticket-body h3 { margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--t2); }
+    .ticket-body .bioma { font-size: .82rem; font-weight: 800; color: var(--t1); text-transform: uppercase; letter-spacing: 1px; }
+    .ticket-body p { margin: 6px 0 12px; color: #5d6b64; font-size: .93rem; }
+    .ticket-cta {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-weight: 800; color: var(--t2);
+        padding: 6px 12px; border-radius: 10px; background: var(--tsoft);
+    }
+    .ticket-cta .f { transition: transform .3s var(--ease-bounce); }
+    .ticket:hover .ticket-cta .f { transform: translateX(6px); }
 
-        .avatar-img {
-            height: 85px;
-            width: auto;
-            object-fit: contain;
-            filter: drop-shadow(0px 3px 6px rgba(0,0,0,0.2));
-        }
+    /* Recinto 5 al estilo pixel */
+    .ticket.undertale { background: #000; color: #fff; border: 3px solid #fff; border-radius: 6px; font-family: 'VT323', monospace; }
+    .ticket.undertale:hover { color: #fff; border-color: #ffcc00; }
+    .ticket.undertale .ticket-top { background: #000; border-bottom: 3px solid #fff; }
+    .ticket.undertale .ticket-num { background: transparent; border: 2px solid #fff; border-radius: 0; font-family: 'VT323', monospace; font-size: 1rem; }
+    .ticket.undertale .ticket-body { border-top: none; }
+    .ticket.undertale .ticket-body::before, .ticket.undertale .ticket-body::after { display: none; }
+    .ticket.undertale h3, .ticket.undertale .bioma { color: #fff; font-family: 'VT323', monospace; font-size: 1.6rem; letter-spacing: 1px; }
+    .ticket.undertale .bioma { font-size: 1.1rem; color: #ffcc00; }
+    .ticket.undertale p { color: #cfcfcf; font-size: 1.15rem; line-height: 1.1; }
+    .ticket.undertale .ticket-cta { background: transparent; color: #ff8c1a; border: 2px solid #ff8c1a; border-radius: 0; font-size: 1.2rem; }
+    .ticket.undertale:hover .ticket-cta { color: #ffcc00; border-color: #ffcc00; }
+    .ticket.undertale .soul { color: #ff2a2a; }
 
-        /* MÓDULOS DE NAVEGACIÓN */
-        .modules-container { 
-            background-color: #16213e; 
-            border-radius: 15px; 
-            padding: 25px; 
-            border: 2px solid #0f3460; 
-            text-align: center;
-        }
-        .title-modules { 
-            font-family: 'Courier New', monospace; 
-            font-size: 1.8rem; 
-            color: #f39c12; 
-            font-weight: bold; 
-        }
+    /* Recinto bloqueado */
+    .ticket.locked { background: rgba(255,255,255,.06); color: #f4efe1; border: 2px dashed rgba(244,239,225,.35); box-shadow: none; cursor: pointer; }
+    .ticket.locked:hover { transform: none; }
+    .ticket.locked .ticket-top { background: transparent; }
+    .ticket.locked .ticket-body { border-top-color: rgba(244,239,225,.2); }
+    .ticket.locked .ticket-body::before, .ticket.locked .ticket-body::after { display: none; }
+    .ticket.locked h3 { color: #f4efe1; }
+    .ticket.locked p { color: rgba(244,239,225,.6); }
+    .ticket.locked .ticket-cta { background: rgba(255,255,255,.08); color: #f6c445; }
+    .huevo { display: inline-block; font-size: 3.4rem; transition: transform .2s; }
+    .huevo.wobble { animation: wobble .5s ease-in-out; }
+    @keyframes wobble { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-18deg); } 75% { transform: rotate(18deg); } }
+</style>
+{% endblock %}
 
-        .grid-select { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 15px; 
-            margin-top: 20px; 
-        }
+{% block content %}
+<div class="menu-layout">
 
-        .module-card { 
-            background-color: #0f3460; 
-            border: 3px solid #1f4068; 
-            border-radius: 12px; 
-            padding: 18px; 
-            text-decoration: none; 
-            color: white; 
-            transition: all 0.3s ease; 
-            text-align: center; 
-            position: relative; 
-        }
+    <aside class="side-banner" aria-hidden="true">
+        <img id="banner-izquierdo" src="{{ url_for('static', filename='zoo/ban2.png') }}" alt="" data-zoo-jump>
+    </aside>
 
-        .module-card:hover:not(.locked) { 
-            transform: translateY(-5px); 
-            border-color: #e94560; 
-            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); 
-            color: white; 
-        }
+    <div class="menu-center">
 
-        .module-card.locked { opacity: 0.5; cursor: not-allowed; border-color: #444; }
-        .badge-locked { position: absolute; top: 8px; right: 8px; background-color: #e74c3c; color: white; font-size: 0.7rem; font-weight: bold; padding: 3px 6px; border-radius: 6px; }
-        .emoji-big { font-size: 3rem; margin-bottom: 8px; }
-    </style>
-</head>
-<body>
+        <!-- ENTRADA DEL ZOOLÓGICO (el banner cambia al recargar) -->
+        <section class="entrada zoo-reveal">
+            <div class="entrada-texto">
+                <span class="letrero">🎟️ Bienvenidos al</span>
+                <h1 class="titulo-zoo">Calculadora <span style="white-space: nowrap;"><span class="z">Z</span><span class="eye-big" title="👀"></span><span class="eye-big" title="👀"></span></span></h1>
+                <p>Un zoológico de herramientas computacionales para <b>Álgebra Lineal</b>: cada recinto resuelve un tema paso a paso, con su propio hábitat y sus propios animales.</p>
+                <a href="#mapa" class="btn-explorar">Explorar los recintos <span class="flecha">↓</span></a>
+            </div>
+            <div class="entrada-banner">
+                <img src="{{ url_for('static', filename='zoo/' ~ imagen_banner) }}" alt="Banner del equipo" data-zoo-jump>
+            </div>
+        </section>
 
-    <!-- BANNER FIA SUPERIOR -->
-    <div class="banner-fia shadow-sm">
-        <img src="{{ url_for('static', filename='fia.png') }}" alt="Facultad de Ingeniería y Arquitectura" class="img-fluid">
+        <!-- INFORMACIÓN INSTITUCIONAL -->
+        <section class="zoo-card info-uam zoo-reveal" style="margin-top:0">
+            <img src="{{ url_for('static', filename='zoo/logo.png') }}" alt="Universidad Americana" class="logo-uam" data-zoo-jump>
+            <h2>Universidad Americana</h2>
+            <div class="facultad">Facultad de Ingeniería y Arquitectura</div>
+            <div class="asignatura">
+                <span>📘 Álgebra Lineal (MTM0120)</span>
+                <span class="grupo">Grupo 2</span>
+            </div>
+            <div class="personas">
+                <div class="persona">
+                    <img src="{{ url_for('static', filename='zoo/prof.png') }}" alt="Autores">
+                    <div>
+                        <div class="rol">Cuidadores del zoo · Autores</div>
+                        <ul>
+                            <li>Gabriel Omar Carrillo Picado</li>
+                            <li>Moisés Abraham Moraga Salazar</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="persona">
+                    <img src="{{ url_for('static', filename='zoo/proff.png') }}" alt="Docente">
+                    <div>
+                        <div class="rol">Director del zoo · Docente</div>
+                        <p>Carlos Iván Argüello Martínez</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAPA DE RECINTOS -->
+        <section id="mapa" style="scroll-margin-top: 90px;">
+            <div class="mapa-head zoo-reveal">
+                <h2>🗺️ Mapa del zoológico</h2>
+                <p>Elige un recinto para empezar a calcular</p>
+            </div>
+
+            <div class="recintos mt-3">
+                <a href="/matrices" class="ticket zoo-reveal" style="--t1:#8e3fd6; --t2:#5a1d9b; --tsoft:#f5ecff;">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 1</span><span class="emoji">🎩🐰</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">Bioma mágico</div>
+                        <h3>Matrices</h3>
+                        <p>Gauss-Jordan, inversa, multiplicación y sistemas Ax = b.</p>
+                        <span class="ticket-cta">Entrar <span class="f">→</span></span>
+                    </div>
+                </a>
+
+                <a href="/vectores" class="ticket zoo-reveal" style="--t1:#f07c13; --t2:#a94b00; --tsoft:#fff2e0;">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 2</span><span class="emoji">🌴🦦</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">Bioma tropical</div>
+                        <h3>Vectores</h3>
+                        <p>Combinación e independencia lineal, linealidad y escalares.</p>
+                        <span class="ticket-cta">Entrar <span class="f">→</span></span>
+                    </div>
+                </a>
+
+                <a href="/sistemas" class="ticket zoo-reveal" style="--t1:#10a3b6; --t2:#086a78; --tsoft:#e2f8fb;">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 3</span><span class="emoji">🫧🦎</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">Bioma acuático</div>
+                        <h3>Sistemas numéricos</h3>
+                        <p>Conversión entre binario, octal, decimal y hexadecimal.</p>
+                        <span class="ticket-cta">Entrar <span class="f">→</span></span>
+                    </div>
+                </a>
+
+                <a href="/romanos" class="ticket zoo-reveal" style="--t1:#c8611e; --t2:#873911; --tsoft:#fff0dc;">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 4</span><span class="emoji">🐍🐫</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">Bioma desértico</div>
+                        <h3>Números romanos</h3>
+                        <p>De arábigo a romano y de vuelta, con reglas de sustracción.</p>
+                        <span class="ticket-cta">Entrar <span class="f">→</span></span>
+                    </div>
+                </a>
+
+                <a href="/undertale" class="ticket undertale zoo-reveal">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 5</span><span class="emoji">💀<span class="soul">❤</span></span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">* El subsuelo</div>
+                        <h3>DETERMINANTES</h3>
+                        <p>* Saber que puedes calcular el determinante de cualquier matriz… te llena de DETERMINACIÓN.</p>
+                        <span class="ticket-cta">❤ ENTRAR</span>
+                    </div>
+                </a>
+
+                <a href="/raices" class="ticket zoo-reveal" style="--t1:#0e8db0; --t2:#08566f; --tsoft:#e5f6fc;">
+                    <div class="ticket-top"><span class="ticket-num">Recinto 6</span><span class="emoji">🐳❄️</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma">Bioma ártico</div>
+                        <h3>Raíces de ecuaciones</h3>
+                        <p>Bisección, regla falsa, Newton-Raphson y secante con gráfica.</p>
+                        <span class="ticket-cta">Entrar <span class="f">→</span></span>
+                    </div>
+                </a>
+
+                <div class="ticket locked zoo-reveal" id="recinto-secreto" role="button" tabindex="0" aria-label="Recinto en construcción">
+                    <div class="ticket-top"><span class="ticket-num" style="background:rgba(255,255,255,.12)">Recinto ?</span><span class="huevo" id="huevo">🥚</span></div>
+                    <div class="ticket-body">
+                        <div class="bioma" style="color:#f6c445">Próximamente</div>
+                        <h3>???</h3>
+                        <p id="huevo-texto">Este recinto está en construcción. Algo se mueve adentro…</p>
+                        <span class="ticket-cta">🔒 Cerrado</span>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <!-- ESTRUCTURA PRINCIPAL DEL MENÚ -->
-    <div class="main-layout">
+    <aside class="side-banner right" aria-hidden="true">
+        <img src="{{ url_for('static', filename='zoo/ban1.png') }}" alt="" data-zoo-jump>
+    </aside>
+</div>
+{% endblock %}
 
-        <!-- LADO IZQUIERDO: ban2.png -->
-        <aside class="side-banner">
-            <img src="{{ url_for('static', filename='ban2.png') }}" alt="Personajes Izquierda">
-        </aside>
+{% block scripts %}
+<script>
+    // Huevo de pascua: en la recarga número 13 del menú, ban1alt.png reemplaza a ban2.png
+    (function () {
+        const RECARGAS_NECESARIAS = 13;
+        let recargas = 0;
+        try {
+            const nav = performance.getEntriesByType('navigation')[0];
+            const esRecarga = nav ? nav.type === 'reload' : (performance.navigation && performance.navigation.type === 1);
+            recargas = Number(localStorage.getItem('zoo-recargas') || 0);
+            recargas = esRecarga ? recargas + 1 : recargas;
+            if (recargas >= RECARGAS_NECESARIAS) {
+                localStorage.setItem('zoo-recargas', '0');
+                const banner = document.getElementById('banner-izquierdo');
+                banner.src = "{{ url_for('static', filename='zoo/ban1alt.png') }}";
+                window.addEventListener('load', () => {
+                    window.Zoo.toast('🔄 ¡13 recargas! Se invirtieron los papeles… ahora el profe es el que corre 🏃‍♂️💨', 5500);
+                    window.Zoo.burstFrom(banner, 18, ['🔄', '🏃', '💨', '😱', '🐾']);
+                });
+            } else {
+                localStorage.setItem('zoo-recargas', String(recargas));
+            }
+        } catch (e) { /* si el navegador bloquea el almacenamiento, el banner normal se queda */ }
+    })();
 
-        <!-- CONTENIDO CENTRAL -->
-        <main class="center-content">
+    // Huevo de pascua: el recinto bloqueado esconde un huevo que eclosiona
+    (function () {
+        const card = document.getElementById('recinto-secreto');
+        const huevo = document.getElementById('huevo');
+        const texto = document.getElementById('huevo-texto');
+        const etapas = [
+            ['🥚', 'Este recinto está en construcción. Algo se mueve adentro…'],
+            ['🥚', '*toc toc* … creo que escuchó algo.'],
+            ['🥚', '*crack* ¡Se está rompiendo!'],
+            ['🐣', '¡Está naciendo!'],
+            ['🐥', '¡Nació el Recinto ?! Es un pollito. Todavía no sabe álgebra, pero ya sabe contar hasta 0⁰.']
+        ];
+        let etapa = 0;
+        function tocar() {
+            if (etapa >= etapas.length - 1) {
+                window.Zoo.burstFrom(huevo, 10, ['🐥', '💛', '🐣', '✨']);
+                return;
+            }
+            etapa++;
+            huevo.classList.remove('wobble'); void huevo.offsetWidth; huevo.classList.add('wobble');
+            huevo.textContent = etapas[etapa][0];
+            texto.textContent = etapas[etapa][1];
+            if (etapa === etapas.length - 1) {
+                window.Zoo.burstFrom(huevo, 22, ['🐥', '💛', '🐣', '✨', '🎉']);
+                window.Zoo.toast('🐣 ¡Encontraste un huevo de pascua… literalmente!');
+            }
+        }
+        card.addEventListener('click', tocar);
+        card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tocar(); } });
 
-            <!-- PARTE SUPERIOR DEL MENÚ: CAMBIA ALEATORIAMENTE -->
-             <div class="top-banner-container">
-                <img src="{{ url_for('static', filename=imagen_banner) }}" alt="Banner Superior" class="top-banner-img">
-            </div>
-
-            <!-- ENCABEZADO INSTITUCIONAL DE LA UAM -->
-            <div class="info-card text-center">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="Universidad Americana" class="logo-uam d-block mx-auto">
-                <h3 style="color: #005a9c; font-weight: bold;" class="mb-1">Universidad Americana</h3>
-                <h5 class="text-secondary fw-bold mb-2">Facultad de Ingeniería y Arquitectura</h5>
-
-                <div class="py-2 my-2 rounded-3" style="background-color: #e3f2fd; border: 1px solid #90caf9;">
-                    <h4 style="color: #0d47a1; font-weight: bold;" class="mb-0">Asignatura: Álgebra Lineal (MTM0120)</h4>
-                    <h5 style="color: #1565c0; font-weight: bold;" class="mt-1 mb-0">Grupo 2</h5>
-                </div>
-
-                <hr class="my-3">
-
-                <!-- INTEGRANTES Y DOCENTE CON AVATARES -->
-                <div class="row g-3 text-start justify-content-center align-items-stretch">
-                    
-                    <!-- AUTORES (prof.png) -->
-                    <div class="col-md-6">
-                        <div class="person-box d-flex align-items-center gap-3">
-                            <img src="{{ url_for('static', filename='prof.png') }}" alt="Autores" class="avatar-img">
-                            <div>
-                                <strong class="text-primary d-block mb-1">Autores:</strong>
-                                <ul class="mb-0 ps-3 fw-semibold text-dark small">
-                                    <li>Gabriel Omar Carrillo Picado</li>
-                                    <li>Moisés Abraham Moraga Salazar</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- DOCENTE (proff.png) -->
-                    <div class="col-md-6">
-                        <div class="person-box d-flex align-items-center gap-3">
-                            <img src="{{ url_for('static', filename='proff.png') }}" alt="Docente" class="avatar-img">
-                            <div>
-                                <strong class="text-primary d-block mb-1">Docente:</strong>
-                                <p class="mb-0 fw-bold text-dark small">Carlos Iván Argüello Martínez</p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- SECCIÓN DE SELECCIÓN DE MÓDULOS -->
-            <div class="modules-container">
-                <h2 class="title-modules">Calculadora Z00</h2>
-                <p class="text-white-50 mt-1 mb-0">Calculadora con herramientas computacionales para Álgebra Lineal</p>
-                
-                <div class="grid-select">
-
-                    <!-- MÓDULO 1: MATRICES -->
-                    <a href="/matrices" class="module-card" style="border-color: #ce93d8;">
-                        <div class="emoji-big">🎩🐰</div>
-                        <h4 style="color: #ce93d8;">Módulo 1</h4>
-                        <p class="mb-0 text-white-50 fs-7">Operaciones con Matrices</p>
-                    </a>
-
-                    <!-- MÓDULO 2: VECTORES -->
-                    <a href="/vectores" class="module-card" style="border-color: #ffb74d;">
-                        <div class="emoji-big">🌴🦦</div>
-                        <h4 style="color: #ffb74d;">Módulo 2</h4>
-                        <p class="mb-0 text-white-50 fs-7">Operaciones Vectoriales</p>
-                    </a>
-
-                    <!-- MÓDULO 3: SISTEMAS NUMÉRICOS -->
-                    <a href="/sistemas" class="module-card" style="border-color: #4dd0e1;">
-                        <div class="emoji-big">🫧🦎</div>
-                        <h4 style="color: #4dd0e1;">Módulo 3</h4>
-                        <p class="mb-0 text-white-50 fs-7">Sistemas Numéricos</p>
-                    </a>
-
-                    <!-- MÓDULO 4: NÚMEROS ROMANOS (DESIERTO) -->
-                    <a href="/romanos" class="module-card" style="border-color: #f4a460;">
-                        <div class="emoji-big">🐍🐫</div>
-                        <h4 style="color: #f4a460;">Módulo 4</h4>
-                        <p class="mb-0 text-white-50 fs-7">Números Romanos</p>
-                    </a>
-                    <!-- MÓDULO 5: Determinantes (Determinación) -->
-                     <a href="/undertale" class="module-card" style="border-color: #ffffff; background-color: #000000; text-decoration: none;">
-                        <div class="emoji-big">💀❤️</div>
-                        <h4 style="color: white; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;">Modulo 5</h4>
-                        <h6 style="color: white; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;">Determinantes</h6>
-                        <p class="mb-0 text-white-50 fs-7" style="font-family: 'Courier New', Courier, monospace;">Saber que puedes calcular el determinante de cualquier matriz... ¡Te llena de determinación!</p>
-                    </a>
-
-                    <!-- MÓDULO 6: RAÍCES DE ECUACIONES -->
-                    <a href="/raices" class="module-card" style="border-color: #4dd0e1;">
-                        <div class="emoji-big">🐳❄️</div>
-                        <h4 style="color: #4dd0e1;">Módulo 6</h4>
-                        <p class="mb-0 text-white-50 fs-7">Raíces de Ecuaciones</p>
-                    </a>
-
-                    <!-- MÓDULO 7 (BLOQUEADO) -->
-                    <div class="module-card locked">
-                        <span class="badge-locked">Próximamente</span>
-                        <div class="emoji-big">📐⚡</div>
-                        <h4 class="text-secondary">Módulo ?</h4>
-                        <p class="mb-0 text-white-50 fs-7">???</p>
-                    </div>
-
-                </div>
-            </div>
-
-        </main>
-
-        <!-- LADO DERECHO: ban1.png -->
-        <aside class="side-banner">
-            <img src="{{ url_for('static', filename='ban1.png') }}" alt="Personajes Derecha">
-        </aside>
-
-    </div>
-
-</body>
-</html>
+        // Los ojos del título parpadean de vez en cuando (y si les haces clic)
+        const ojos = document.querySelectorAll('.eye-big');
+        let clicsOjos = 0;
+        function parpadear() {
+            ojos.forEach(o => { o.classList.remove('blink'); void o.offsetWidth; o.classList.add('blink'); });
+        }
+        setInterval(parpadear, 4200);
+        ojos.forEach(o => o.addEventListener('click', () => {
+            parpadear();
+            if (++clicsOjos === 5) {
+                clicsOjos = 0;
+                window.Zoo.toast('👀 ¡Oye! Los ojos del zoológico te están vigilando… y revisando tus cálculos.');
+                window.Zoo.burstFrom(o, 16, ['👀', '👁️', '🐾']);
+            }
+        }));
+    })();
+</script>
+{% endblock %}

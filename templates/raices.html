@@ -1,124 +1,98 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo 6: Raíces de Ecuaciones (Nivel Belugas 🐳❄️)</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #e1f5fe 100%);
-            color: #004d40;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0; padding: 20px;
-        }
-        .header-beluga {
-            background: linear-gradient(135deg, #00838f, #00acc1, #00695c);
-            color: white; border-radius: 20px; padding: 25px 35px;
-            display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 8px 20px rgba(0, 131, 143, 0.3);
-            border: 3px solid #4dd0e1;
-        }
-        .header-beluga h1 { margin: 0; font-weight: 800; font-size: 2.2rem; }
-        .beluga-circle-wrapper {
-            width: 75px; height: 75px; min-width: 75px; min-height: 75px;
-            border-radius: 50%; background: rgba(0, 131, 143, 0.18);
-            border: 2px solid rgba(0, 131, 143, 0.4);
-            box-shadow: 0 4px 12px rgba(0, 131, 143, 0.25);
-            display: inline-flex; align-items: center; justify-content: center;
-            overflow: hidden; transition: transform 0.3s ease;
-        }
-        .header-beluga .beluga-circle-wrapper {
-            width: 95px; height: 95px; min-width: 95px; min-height: 95px;
-            background: rgba(255, 255, 255, 0.25);
-            border: 2px solid rgba(255, 255, 255, 0.6);
-        }
-        .beluga-circle-wrapper:hover { transform: scale(1.08); }
-        .beluga-img-inner { max-width: 85%; max-height: 85%; object-fit: contain; mix-blend-mode: multiply; }
-        .card-custom {
-            background: rgba(255, 255, 255, 0.95); border-radius: 18px; padding: 25px;
-            border: 2px solid #80deea; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-            margin-top: 20px;
-        }
-        .table-excel {
-            width: 100%; border-collapse: collapse;
-            font-family: 'Consolas', 'Courier New', monospace;
-            background-color: white; font-size: 0.95rem;
-        }
-        .table-excel th {
-            background-color: #f2f2f2; color: #333; border: 1px solid #d0d0d0;
-            padding: 8px 12px; text-align: center; font-weight: bold;
-        }
-        .table-excel td { border: 1px solid #e0e0e0; padding: 6px 10px; text-align: right; }
-        .table-excel tr:nth-child(even) { background-color: #fafafa; }
-        .table-excel tr:hover { background-color: #e0f7fa; }
-        .btn-graficar {
-            background: linear-gradient(135deg, #00acc1, #00838f);
-            color: white; border: none; font-weight: bold; border-radius: 12px;
-            padding: 12px 20px; transition: all 0.3s ease;
-        }
-        .btn-graficar:hover { background: linear-gradient(135deg, #00838f, #00695c); color: white; transform: translateY(-2px); }
-        .btn-beluga {
-            background: linear-gradient(135deg, #00695c, #004d40);
-            color: white; font-weight: bold; border: none;
-            border-radius: 12px; padding: 14px 25px; transition: all 0.3s ease;
-        }
-        .btn-beluga:hover { background: linear-gradient(135deg, #004d40, #00251a); color: white; transform: translateY(-2px); }
-        .step-badge {
-            background-color: #00838f; color: white; font-weight: bold;
-            padding: 4px 10px; border-radius: 8px; font-size: 0.9rem;
-        }
-        .math-keyboard {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 10px;
-        }
-        .btn-quick {
-            background: #e0f7fa; color: #00695c; border: 1px solid #80deea;
-            border-radius: 6px; font-weight: bold; padding: 4px 8px; font-size: 0.9rem;
-            transition: all 0.2s; margin: 1px;
-        }
-        .btn-quick:hover { background: #b2ebf2; color: #004d40; transform: translateY(-1px); }
-        .btn-quick-dark {
-            background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db;
-            border-radius: 6px; font-weight: bold; padding: 4px 8px; font-size: 0.9rem;
-            transition: all 0.2s; margin: 1px;
-        }
-        .btn-quick-dark:hover { background: #d6d8db; color: #1e2125; transform: translateY(-1px); }
-        .input-b-disabled {
-            background-color: #e9ecef !important;
-            opacity: 0.7;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base.html' %}
+{% import '_zoo.html' as zoo with context %}
+{% set tema = 'artico' %}
+{% set modulo = 'raices' %}
+{% set loader_img = 'beg2.gif' %}
+{% set loader_txt = 'La beluga está iterando bajo el hielo…' %}
 
-<div class="container" style="max-width: 1100px;">
+{% block title %}Recinto 6 · Raíces de Ecuaciones · Calculadora Z00{% endblock %}
 
-    <a href="/" class="btn btn-outline-info mb-3 fw-bold text-dark bg-white">⬅ Volver al Menú Principal</a>
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
-    <header class="header-beluga">
-        <div>
-            <h1>Módulo 6: Raíces de Ecuaciones 🐳❄️</h1>
-            <p class="mb-0 fs-5 text-white-50">Bioma Ártico / Métodos Numéricos Abiertos y Cerrados</p>
-        </div>
-        <div class="beluga-circle-wrapper">
-            <img src="{{ url_for('static', filename='be1.png') }}" alt="Beluga 1" class="beluga-img-inner">
-        </div>
-    </header>
+{% block styles %}
+<style>
+    .step-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 6px 14px; border-radius: 999px;
+        background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff;
+        font: 700 .85rem var(--font-body); letter-spacing: 1px; text-transform: uppercase;
+        box-shadow: 0 6px 14px -6px var(--glow);
+    }
+    .math-keyboard {
+        background: var(--soft); border: 1px solid var(--line);
+        border-radius: 18px; padding: 12px 14px;
+    }
+    .math-keyboard small { color: var(--c2) !important; }
+    .btn-quick, .btn-quick-dark {
+        min-width: 42px; margin: 1px;
+        padding: 6px 10px; border-radius: 10px;
+        font: 700 1rem var(--font-mono);
+        background: #fff; color: var(--c2);
+        border: 1px solid var(--line); box-shadow: 0 3px 0 var(--line);
+        transition: transform .15s, box-shadow .15s, background .15s;
+    }
+    .btn-quick-dark { background: #eef3f5; color: #36474d; }
+    .btn-quick:hover, .btn-quick-dark:hover { transform: translateY(-2px); background: #fff; box-shadow: 0 5px 0 var(--c3); }
+    .btn-quick:active, .btn-quick-dark:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+    .btn-graficar {
+        border: none; color: #fff !important; font-weight: 800;
+        background: linear-gradient(135deg, var(--c3), var(--c1));
+        border-radius: 0 14px 14px 0 !important;
+        transition: filter .2s;
+    }
+    .btn-graficar:hover { filter: brightness(1.08); }
+    .grafica-box {
+        height: 380px; position: relative; padding: 10px;
+        background: #fff; border-radius: 20px; border: 2px solid var(--line);
+        box-shadow: inset 0 0 0 6px var(--soft);
+    }
+    .input-b-disabled { background-color: #e9eef0 !important; opacity: .65; }
 
-    <div class="card-custom">
-        <form method="POST" action="/raices" id="form-raices">
+    .table-excel { width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-mono); font-size: .9rem; }
+    .table-excel th {
+        position: sticky; top: 0;
+        background: linear-gradient(135deg, var(--c1), var(--c2)); color: #fff;
+        padding: 10px 12px; text-align: center; font-weight: 700; white-space: nowrap;
+    }
+    .table-excel th:first-child { border-radius: 12px 0 0 0; }
+    .table-excel th:last-child { border-radius: 0 12px 0 0; }
+    .table-excel td { border-bottom: 1px solid var(--line); padding: 7px 10px; text-align: right; background: #fff; }
+    .table-excel tr:nth-child(even) td { background: #f6fbfd; }
+    .table-excel tbody tr { animation: zoo-pop .4s var(--ease-out) both; }
+    .table-excel tbody tr:hover td { background: var(--soft); }
+    .tabla-wrap { max-height: 520px; overflow: auto; border-radius: 14px; border: 1px solid var(--line); }
+
+    .resumen {
+        margin-top: 20px; padding: 20px; border-radius: 20px;
+        background: linear-gradient(160deg, #fff, var(--soft)); border: 2px solid var(--line);
+    }
+    .resumen .raiz { font: 700 1.6rem var(--font-display); color: var(--c2); }
+    /* Tarjetas del paso a paso que vienen desde raices.py */
+    .zoo-card .card { border-radius: 16px !important; border: 1px solid var(--line) !important; overflow: hidden; }
+    .zoo-card .card-header { background: var(--soft) !important; color: var(--c2); font-weight: 800; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="zoo-wrap wide">
+    {{ zoo.volver() }}
+
+    {{ zoo.hero('06', 'Bioma ártico', 'Recinto de Raíces de Ecuaciones',
+                'Métodos numéricos abiertos y cerrados: bisección, regla falsa, Newton-Raphson y secante.',
+                'zoo/be1.png', 'zoo/be2.png', '🐳 ❄️ 🧊', true) }}
+
+    <div class="zoo-card accent zoo-reveal">
+        <form method="POST" action="/raices" id="form-raices" data-zoo-loader>
 
             <!-- PASO 1 -->
             <div class="mb-3">
-                <span class="step-badge mb-2 d-inline-block">PASO 1: Inspección Visual</span>
-                <label class="form-label fw-bold text-secondary d-block fs-5">Ingresa la Ecuación f(x) = 0:</label>
+                <span class="step-badge mb-3">❄ Paso 1 · Inspección visual</span>
+                <label class="form-label d-block fs-5">Ingresa la ecuación f(x) = 0:</label>
 
                 <div class="input-group mb-3">
-                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg border-info fw-bold" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + eˣ - 10" required>
+                    <input type="text" name="ecuacion" id="input-ecuacion" class="form-control form-control-lg fw-bold" style="font-family: var(--font-mono);" value="{{ ecuacion }}" placeholder="Ej: x⁴ - 5x³ + eˣ - 10" required>
                     <button type="button" id="btn-graficar" class="btn btn-graficar fs-5 px-4" onclick="generarGraficaManually()">
                         📈 GENERAR GRÁFICA
                     </button>
@@ -126,7 +100,7 @@
 
                 <div class="math-keyboard mb-2">
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Básicas:</small>
+                        <small class="fw-bold" style="width: 110px;">Básicas:</small>
                         <button type="button" class="btn-quick" onclick="insertar('sen(')">sen</button>
                         <button type="button" class="btn-quick" onclick="insertar('cos(')">cos</button>
                         <button type="button" class="btn-quick" onclick="insertar('tan(')">tan</button>
@@ -135,19 +109,19 @@
                         <button type="button" class="btn-quick" onclick="insertar('csc(')">csc</button>
                     </div>
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Inversas:</small>
+                        <small class="fw-bold" style="width: 110px;">Inversas:</small>
                         <button type="button" class="btn-quick" onclick="insertar('arcsen(')">arcsen</button>
                         <button type="button" class="btn-quick" onclick="insertar('arccos(')">arccos</button>
                         <button type="button" class="btn-quick" onclick="insertar('arctan(')">arctan</button>
                     </div>
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Hiperbólicas:</small>
+                        <small class="fw-bold" style="width: 110px;">Hiperbólicas:</small>
                         <button type="button" class="btn-quick-dark" onclick="insertar('senh(')">senh</button>
                         <button type="button" class="btn-quick-dark" onclick="insertar('cosh(')">cosh</button>
                         <button type="button" class="btn-quick-dark" onclick="insertar('tanh(')">tanh</button>
                     </div>
                     <div class="d-flex flex-wrap gap-1 align-items-center mb-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Símbolos:</small>
+                        <small class="fw-bold" style="width: 110px;">Símbolos:</small>
                         <button type="button" class="btn-quick" onclick="insertar('ln(')">ln</button>
                         <button type="button" class="btn-quick" onclick="insertar('log(')">log</button>
                         <button type="button" class="btn-quick" onclick="insertar('e')">e</button>
@@ -158,8 +132,8 @@
                         <button type="button" class="btn-quick" onclick="insertar(')')">)</button>
                     </div>
                     <div class="d-flex flex-wrap gap-1 align-items-center border-top pt-2 mt-2">
-                        <small class="text-muted fw-bold" style="width: 110px;">Exponentes:</small>
-                        <button type="button" class="btn-quick" style="background: #ffe082; border-color: #ffca28;" onclick="insertar('ˣ')">ˣ</button>
+                        <small class="fw-bold" style="width: 110px;">Exponentes:</small>
+                        <button type="button" class="btn-quick" style="background: #ffe9a8; border-color: #ffca28;" onclick="insertar('ˣ')">ˣ</button>
                         <button type="button" class="btn-quick" onclick="insertar('⁰')">⁰</button>
                         <button type="button" class="btn-quick" onclick="insertar('¹')">¹</button>
                         <button type="button" class="btn-quick" onclick="insertar('²')">²</button>
@@ -174,35 +148,35 @@
                     </div>
                 </div>
 
-                <small class="text-muted d-block">
+                <small class="d-block" style="color: var(--muted);">
                     <b>Guía rápida:</b> Puedes escribir <b>eˣ</b> (usando el botón amarillo), <b>x⁴</b>, <b>2^x</b>, <b>(x+1)^x</b>, <b>senx</b>, <b>ln(x+2)</b>, <b>e^x</b> o <b>1e-6</b>.
                 </small>
             </div>
 
             <!-- GRÁFICA -->
-            <div class="mt-4 text-center">
-                <div class="d-flex align-items-center justify-content-center gap-3 mb-2">
-                    <div class="beluga-circle-wrapper">
-                        <img src="{{ url_for('static', filename='beg1.gif') }}" class="beluga-img-inner" alt="Beluga Nieve">
+            <div class="mt-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="zoo-avatar blend" data-zoo-jump>
+                        <img src="{{ url_for('static', filename='beg1.gif') }}" alt="Beluga Nieve">
                     </div>
                     <div>
-                        <h3 class="fw-bold" style="color: #00838f; margin: 0;">Gráfica de Inspección de la Función f(x)</h3>
-                        <small class="text-muted">Observa dónde la curva cruza la línea roja (Eje Y = 0). <span id="mensaje-grafica" class="text-danger fw-bold"></span></small>
+                        <h3 class="m-0" style="color: var(--c2); font-weight: 700;">Gráfica de inspección de f(x)</h3>
+                        <small style="color: var(--muted);">Observa dónde la curva cruza la línea roja (Eje Y = 0). <span id="mensaje-grafica" class="text-danger fw-bold"></span></small>
                     </div>
                 </div>
-                <div style="height: 380px; position: relative;" class="p-2 bg-white rounded-4 border border-info-subtle">
+                <div class="grafica-box">
                     <canvas id="graficaCurva"></canvas>
                 </div>
             </div>
 
             <!-- PASO 2 -->
-            <div class="mt-4 pt-3 border-top">
-                <span class="step-badge mb-3 d-inline-block">PASO 2: Selección de Intervalo y Cálculo</span>
+            <div class="mt-4 pt-4" style="border-top: 2px dashed var(--line);">
+                <span class="step-badge mb-3">🧊 Paso 2 · Intervalo y cálculo</span>
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label fw-bold text-secondary">Método Numérico:</label>
-                        <select name="metodo" class="form-select form-select-lg border-info fw-bold" id="select-metodo" onchange="ajustarLabels()">
+                        <label class="form-label">Método numérico:</label>
+                        <select name="metodo" class="form-select form-select-lg fw-bold" id="select-metodo" onchange="ajustarLabels()">
                             <option value="biseccion" {% if metodo == 'biseccion' %}selected{% endif %}>Bisección (Cerrado)</option>
                             <option value="regla_falsa" {% if metodo == 'regla_falsa' %}selected{% endif %}>Regla Falsa (Cerrado)</option>
                             <option value="newton" {% if metodo == 'newton' %}selected{% endif %}>Newton-Raphson (Abierto)</option>
@@ -210,52 +184,49 @@
                         </select>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-secondary" id="lbl-a">Extremo a (o x0):</label>
-                        <input type="text" name="a" id="input-a" class="form-control border-info form-control-lg fw-bold" value="{{ a }}" required>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" id="lbl-a">Extremo a (o x0):</label>
+                        <input type="text" name="a" id="input-a" class="form-control form-control-lg fw-bold" value="{{ a }}" required>
                     </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-secondary" id="lbl-b">Extremo b (o x1):</label>
-                        <input type="text" name="b" id="input-b" class="form-control border-info form-control-lg fw-bold" value="{{ b }}">
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold text-secondary">Tolerancia (Error Máx):</label>
-                        <input type="text" name="tol" class="form-control border-info" value="{{ tol }}" required>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label" id="lbl-b">Extremo b (o x1):</label>
+                        <input type="text" name="b" id="input-b" class="form-control form-control-lg fw-bold" value="{{ b }}">
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-bold text-secondary">Máx. Iteraciones:</label>
-                        <input type="text" name="max_iter" class="form-control border-info" value="{{ max_iter }}" required>
+                        <label class="form-label">Tolerancia (error máx.):</label>
+                        <input type="text" name="tol" class="form-control" value="{{ tol }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Máx. iteraciones:</label>
+                        <input type="text" name="max_iter" class="form-control" value="{{ max_iter }}" required>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-beluga fs-4 w-100 mt-4 shadow-sm">
-                    🐋 CALCULAR RAÍZ, ERRORES Y RESOLVER
+                <button type="submit" class="btn-zoo mt-4">
+                    <span class="ico">🐋</span> Calcular raíz, errores y resolver
                 </button>
             </div>
         </form>
     </div>
 
+    {% if error or tabla %}
+    <div id="zoo-resultados" data-zoo-scroll></div>
+    {% endif %}
+
     <!-- ERRORES -->
     {% if error %}
-        <div class="alert alert-danger mt-4 text-center rounded-4 fw-bold shadow-sm" role="alert">
-            {{ error }}
-        </div>
+        <div class="zoo-alert" role="alert"><span class="ico">⚠️</span><div>{{ error }}</div></div>
     {% endif %}
 
     <!-- RESULTADOS -->
     {% if tabla %}
-    <div class="card-custom">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Hoja de Cálculo General (Resumen de Iteraciones)</h3>
-            <div class="beluga-circle-wrapper">
-                <img src="{{ url_for('static', filename='be2.png') }}" class="beluga-img-inner" alt="Beluga 2">
-            </div>
-        </div>
+    <div class="zoo-card zoo-result zoo-reveal" style="text-align: left;">
+        {{ zoo.card_head('Hoja de cálculo general', 'zoo/be2.png', 'Resumen de todas las iteraciones') }}
 
-        <div class="table-responsive">
+        <div class="tabla-wrap">
             <table class="table-excel">
                 <thead>
                     <tr>
@@ -287,25 +258,25 @@
                 </thead>
                 <tbody>
                     {% for fila in tabla %}
-                    <tr>
+                    <tr style="animation-delay: {{ [loop.index0 * 0.03, 0.6] | min }}s;">
                         <td style="text-align: center; font-weight: bold;">{{ fila.it }}</td>
                         {% if metodo == 'newton' %}
                             <td>{{ "%.6f"|format(fila.x_k) }}</td>
                             <td>{{ "%.6f"|format(fila.fx_k) }}</td>
                             <td>{{ "%.6f"|format(fila.dfx_k) }}</td>
-                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.x_next) }}</td>
+                            <td style="font-weight: bold; color: var(--c1);">{{ "%.6f"|format(fila.x_next) }}</td>
                             <td>{{ "%.6f"|format(fila.fx_next) }}</td>
                         {% elif metodo == 'secante' %}
                             <td>{{ "%.6f"|format(fila.x_k) }}</td>
                             <td>{{ "%.6f"|format(fila.x_k1) }}</td>
                             <td>{{ "%.6f"|format(fila.fx_k) }}</td>
                             <td>{{ "%.6f"|format(fila.fx_k1) }}</td>
-                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.x_next) }}</td>
+                            <td style="font-weight: bold; color: var(--c1);">{{ "%.6f"|format(fila.x_next) }}</td>
                             <td>{{ "%.6f"|format(fila.fx_next) }}</td>
                         {% else %}
                             <td>{{ "%.6f"|format(fila.a) }}</td>
                             <td>{{ "%.6f"|format(fila.b) }}</td>
-                            <td style="font-weight: bold; color: #00838f;">{{ "%.6f"|format(fila.c) }}</td>
+                            <td style="font-weight: bold; color: var(--c1);">{{ "%.6f"|format(fila.c) }}</td>
                             <td>{{ "%.6f"|format(fila.fa) }}</td>
                             <td>{{ "%.6f"|format(fila.fb) }}</td>
                             <td>{{ "%.6f"|format(fila.fc) }}</td>
@@ -320,18 +291,16 @@
             </table>
         </div>
 
-        <div class="mt-4 p-3 rounded-3" style="background-color: #e0f2f1; border: 2px solid #80deea;">
-            <h4 class="fw-bold mb-1" style="color: #00695c;">Resumen de la Solución:</h4>
+        <div class="resumen">
+            <h4 class="fw-bold mb-2" style="color: var(--c2);">🐳 Resumen de la solución</h4>
             <p class="mb-1 fs-5"><b>Se realizaron {{ tabla|length }} iteraciones.</b></p>
             {% if raiz_hallada is not none %}
-                <p class="mb-1 fs-4" style="color: #00838f;">
-                    <b>La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</b>
-                </p>
+                <p class="mb-2 raiz">La solución aproximada es x = {{ "%.6f"|format(raiz_hallada) }}</p>
             {% endif %}
 
             {% if metodo == 'secante' %}
-                <div class="my-2 p-2 rounded-3 bg-white border border-info">
-                    <p class="mb-1 fs-5" style="color: #00695c;">
+                <div class="my-2 p-3 rounded-4 bg-white" style="border: 1px solid var(--line);">
+                    <p class="mb-1 fs-5" style="color: var(--c2);">
                         <b>🔍 Raíces detectadas con Secante en el intervalo [{{ a }}, {{ b }}]:</b>
                         <span class="badge bg-info text-dark fs-6 ms-1">
                             {{ raices_secante|length }} {% if raices_secante|length == 1 %}raíz encontrada{% else %}raíces encontradas{% endif %}
@@ -359,13 +328,13 @@
             {% if interpretacion %}
                 <p class="mb-1 fs-6 text-dark">
                     <b>Función interpretada:</b>
-                    <code class="bg-light p-1 rounded">f(x) = {{ interpretacion }}</code>
+                    <code class="bg-white p-1 rounded">f(x) = {{ interpretacion }}</code>
                 </p>
             {% endif %}
             {% if derivada_tex %}
                 <p class="mb-0 fs-6 text-dark">
                     <b>Derivada analítica:</b>
-                    <code class="bg-light p-1 rounded">f'(x) = {{ derivada_tex }}</code>
+                    <code class="bg-white p-1 rounded">f'(x) = {{ derivada_tex }}</code>
                 </p>
             {% endif %}
         </div>
@@ -374,13 +343,8 @@
 
     <!-- PASOS -->
     {% if pasos %}
-    <div class="card-custom">
-        <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="beluga-circle-wrapper">
-                <img src="{{ url_for('static', filename='beg2.gif') }}" class="beluga-img-inner" alt="Beluga Teclado">
-            </div>
-            <h3 class="fw-bold" style="color: #00838f; margin: 0;">Desglose Paso a Paso</h3>
-        </div>
+    <div class="zoo-card zoo-reveal">
+        {{ zoo.card_head('Desglose paso a paso', 'beg2.gif', 'La beluga detalla cada iteración', true) }}
         {% for paso in pasos %}
             {{ paso | safe }}
         {% endfor %}
@@ -388,6 +352,9 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
 
 <!-- INYECCIÓN DE DATOS DESDE FLASK -->
 <script id="data-grafica" type="application/json">
@@ -586,5 +553,4 @@
         }
     });
 </script>
-</body>
-</html>
+{% endblock %}

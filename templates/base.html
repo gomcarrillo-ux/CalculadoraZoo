@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Calculadora Z00{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+
+    <!-- Tipografías (si no hay internet se usan las del sistema) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&family=JetBrains+Mono:wght@500;700&family=VT323&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% block head_extra %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='zoo.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body class="zoo {% block body_class %}{% endblock %}" data-theme="{{ tema | default('menu') }}" data-static="{{ url_for('static', filename='') }}">
+
+<div class="zoo-particles" aria-hidden="true"></div>
+
+{% set recintos = [
+    ('/matrices',  'matrices',  '🐰', 'Recinto 1 · Matrices'),
+    ('/vectores',  'vectores',  '🦦', 'Recinto 2 · Vectores'),
+    ('/sistemas',  'sistemas',  '🦎', 'Recinto 3 · Sistemas numéricos'),
+    ('/romanos',   'romanos',   '🐫', 'Recinto 4 · Números romanos'),
+    ('/undertale', 'undertale', '❤️', 'Recinto 5 · Determinantes'),
+    ('/raices',    'raices',    '🐳', 'Recinto 6 · Raíces de ecuaciones'),
+] %}
+
+<header class="zoo-topbar">
+    <a class="zoo-brand" href="/menu" title="Volver a la entrada del zoológico">
+        <span class="paw" aria-hidden="true">🐾</span>
+        <span>Calculadora <span class="zz">Z<span class="eye-o"></span><span class="eye-o"></span></span></span>
+    </a>
+    <nav class="zoo-mapnav" aria-label="Recintos">
+        <a href="/menu" class="{{ 'active' if modulo == 'menu' else '' }}" data-label="Entrada del zoológico">🏠</a>
+        {% for ruta, clave, emoji, nombre in recintos %}
+            <a href="{{ ruta }}" class="{{ 'active' if modulo == clave else '' }}" data-label="{{ nombre }}">{{ emoji }}</a>
+        {% endfor %}
+    </nav>
+    <img class="zoo-fia" src="{{ url_for('static', filename='fia.png') }}" alt="Facultad de Ingeniería y Arquitectura">
+</header>
+
+<main class="zoo-main">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="zoo-footer">
+    <div class="tracks" aria-hidden="true">🐾 🐾 🐾</div>
+    <div><b>Calculadora Z00</b> · Álgebra Lineal (MTM0120) · Grupo 2</div>
+    <div>Universidad Americana · Facultad de Ingeniería y Arquitectura</div>
+</footer>
+
+<!-- Pantalla de carga (se muestra al enviar un formulario) -->
+<div class="zoo-loader" id="zoo-loader" aria-live="polite">
+    <img src="{{ url_for('static', filename=loader_img | default('capiw.gif')) }}" alt="">
+    <p>{{ loader_txt | default('Calculando…') }}</p>
+    <div class="bar"><i></i></div>
+</div>
+
+<script src="{{ url_for('static', filename='zoo.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

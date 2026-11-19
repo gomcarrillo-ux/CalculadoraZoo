@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% set tema = 'undertale' %}
+{% set modulo = 'undertale' %}
+{% set loader_img = 'sangui.gif' %}
+{% set loader_txt = '* Cargando…' %}
+
+{% block title %}¡Golpe crítico! · Determinantes · Calculadora Z00{% endblock %}
+
+{% block styles %}
+<style>
+    .ut-titulo { font-size: clamp(2.6rem, 7vw, 4.4rem); letter-spacing: 4px; margin: 6px 0 0; animation: ut-golpe .6s steps(6) both; }
+    .ut-titulo .corazon { color: #ff2a2a; display: inline-block; animation: ut-latido 1s steps(2) infinite; }
+    @keyframes ut-golpe { 0% { transform: scale(2.2); opacity: 0; } 60% { transform: scale(.95); opacity: 1; } 100% { transform: none; } }
+    @keyframes ut-latido { 50% { transform: scale(1.25); } }
+    .ut-registro-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 2px solid #fff; padding-bottom: 10px; margin-bottom: 14px; }
+    .ut-registro-head h3 { margin: 0; text-align: left; }
+    .ut-registro-head img { max-height: 100px; image-rendering: pixelated; }
+    .ut-registro { overflow-x: auto; text-align: left; }
+    .ut-registro p { margin: 0 0 10px 6%; }
+    .ut-final { display: flex; align-items: center; gap: 18px; text-align: left; }
+    .ut-final img { max-height: 170px; image-rendering: pixelated; flex: 0 0 auto; }
+    .ut-final .ut-dialogo { font-size: 1.75rem; flex: 1; }
+    @media (max-width: 640px) { .ut-final { flex-direction: column; text-align: center; } }
+    .ut-botones { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 22px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="zoo-wrap" style="text-align: center;">
+
+    {% if error %}
+        <h1 class="ut-titulo" style="color:#ff5555;">* TU ATAQUE FALLÓ</h1>
+        <div class="zoo-card">
+            <div class="ut-dialogo" id="ut-final" style="color:#ff8080;">* {{ error }}</div>
+        </div>
+        <div class="ut-botones">
+            <a href="/undertale" class="boton-accion">INTENTAR DE NUEVO</a>
+            <a href="/menu" class="boton-accion">VOLVER AL MENÚ</a>
+        </div>
+    {% else %}
+        <h1 class="ut-titulo"><span class="corazon">❤</span> ¡GOLPE CRÍTICO!</h1>
+
+        <div class="zoo-card zoo-reveal">
+            <div class="ut-registro-head">
+                <h3>* Registro de Batalla (Paso a Paso):</h3>
+                <img src="{{ url_for('static', filename='towa.gif') }}" alt="Toriel y Frisk" data-zoo-jump>
+            </div>
+            <div class="ut-registro">
+                {% for paso in pasos %}
+                    <p>{{ paso | safe }}</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="zoo-card zoo-reveal" id="zoo-resultados">
+            <div class="ut-final">
+                <img src="{{ url_for('static', filename='sangui.gif') }}" alt="Sans" data-zoo-jump>
+                <div class="ut-dialogo" id="ut-final">* Saber que tu determinante es {{ resultado }} te llena de determinación.</div>
+            </div>
+        </div>
+
+        <div class="ut-botones">
+            <a href="/undertale" class="boton-accion">VOLVER AL CAMPO DE BATALLA</a>
+            <a href="/menu" class="boton-accion">VOLVER AL MENÚ</a>
+            <button type="button" class="boton-accion" id="btn-piedad">PIEDAD</button>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const final = document.getElementById('ut-final');
+        if (final) setTimeout(() => window.Zoo.typewriter(final, final.textContent.trim(), 40), 500);
+        const piedad = document.getElementById('btn-piedad');
+        if (piedad) piedad.addEventListener('click', () => {
+            window.Zoo.toast('* Perdonaste a la matriz. Ganaste 0 EXP y {{ resultado }} de DETERMINACIÓN.');
+            window.Zoo.burstFrom(piedad, 14, ['❤️', '⭐', '✨']);
+        });
+    })();
+</script>
+{% endblock %}
